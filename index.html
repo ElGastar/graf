@@ -1,0 +1,208 @@
+<!DOCTYPE html><html lang="ru"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"><title>График курьеров</title><style>
+:root{--bg:#f4f5fb;--fg:#1b1d2a;--mut:#6c7090;--card:#fff;--line:#e4e6f2;--acc:#5b6cff;--acc2:#8b5bff;--day:#fff3d6;--dayf:#8a5a00;--ngt:#e7e4ff;--ngf:#4a3bb5;--bad:239,68,68;
+box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media(prefers-color-scheme:dark){:root{--bg:#10111a;--fg:#ececf5;--mut:#9a9cba;--card:#1a1c2a;--line:#2b2e44;--acc:#7d8bff;--acc2:#a07dff;--day:#4a3a12;--dayf:#ffd78a;--ngt:#2d2a5c;--ngf:#c9c2ff}}
+*{box-sizing:border-box}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;background:var(--bg);color:var(--fg);font:15px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+.shell{max-width:1240px;margin:0 auto;padding:16px}
+.top{display:flex;gap:12px;justify-content:space-between;align-items:flex-start;padding:20px;border-radius:16px;color:#fff;background:linear-gradient(120deg,var(--acc),var(--acc2));box-shadow:0 8px 24px rgba(91,108,255,.25);margin-bottom:14px}
+.top h1{margin:0 0 4px;font-size:22px}.top p{margin:0;opacity:.9;font-size:13px}
+.badge{background:rgba(255,255,255,.22);border-radius:99px;padding:4px 12px;font-size:12px;white-space:nowrap}
+.tabs{display:flex;gap:6px;overflow-x:auto;margin-bottom:12px;padding-bottom:2px}
+.tabs button{white-space:nowrap}
+button,input,select{font:inherit;color:var(--fg)}
+button,select{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:7px 14px;cursor:pointer;transition:transform .15s,box-shadow .15s,background .2s}
+button:hover:not(:disabled){transform:translateY(-1px);box-shadow:0 4px 12px rgba(0,0,0,.1)}
+button:active{transform:scale(.97)}
+button.on,button.pub{background:linear-gradient(120deg,var(--acc),var(--acc2));border-color:transparent;color:#fff}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:12px;margin-bottom:12px}
+.tools{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+.tools input{border:1px solid var(--line);background:var(--bg);border-radius:8px;padding:6px 8px}
+details{width:100%}summary{cursor:pointer;color:var(--mut)}
+.gh{display:flex;flex-wrap:wrap;gap:10px;margin-top:8px}
+.tw{overflow-x:auto;border:1px solid var(--line);border-radius:14px;background:var(--card);box-shadow:0 2px 10px rgba(0,0,0,.04)}
+table{border-collapse:separate;border-spacing:0;width:100%}
+th,td{border-bottom:1px solid var(--line);border-right:1px solid var(--line);padding:6px 4px;text-align:center;min-width:58px;font-size:13px;transition:background .25s}
+th{background:var(--bg);position:sticky;top:0;z-index:1}th small{display:block;color:var(--mut);font-weight:400}
+th.we{color:var(--acc)}
+.sticky{position:sticky;left:0;z-index:2;background:var(--card)}th.sticky{background:var(--bg);z-index:3}
+td.name{text-align:left;min-width:130px;padding-left:10px;font-weight:600}
+td a{color:inherit;text-decoration:none;white-space:nowrap}td a:hover{color:var(--acc)}
+tbody tr{animation:rowin .35s ease both}
+tbody tr:hover td{background:rgba(125,139,255,.08)}
+tr.me td{background:rgba(125,139,255,.2)!important}
+@keyframes rowin{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+tr.grp th{position:static;text-align:left;padding:8px 12px;font-size:13px;background:linear-gradient(90deg,rgba(125,139,255,.2),transparent)}
+.grp span{background:var(--acc);color:#fff;border-radius:99px;padding:0 8px;font-size:11px;margin-left:6px}
+.chip{display:inline-block;padding:2px 8px;border-radius:99px;font-size:12px;font-weight:600}
+.chip.d{background:var(--day);color:var(--dayf)}.chip.d::before{content:"☀ "}
+.chip.n{background:var(--ngt);color:var(--ngf)}.chip.n::before{content:"☾ "}
+.chip.o{background:rgba(var(--bad),.2)}
+.off{color:var(--mut);font-size:12px}
+td input{width:100%;border:0;background:transparent;padding:8px 4px;text-align:center}
+td.name input{text-align:left;padding-left:8px}
+td input:focus{outline:2px solid var(--acc);outline-offset:-2px;border-radius:6px;background:var(--bg)}
+td.bad{background:rgba(var(--bad),.2)}
+.x{border:0;background:none;color:var(--mut);padding:2px 8px}
+.my{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:8px;margin:0 0 12px;position:relative}
+.my div{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:8px 10px;transition:all .3s}
+.my b{display:block;font-size:17px}
+.hint{color:var(--mut);font-size:13px;margin-top:8px}
+.heat{font-weight:600}.heat small{display:block;font-weight:400;color:var(--mut)}
+.fade-enter-active,.fade-leave-active{transition:opacity .2s,transform .2s}
+.fade-enter-from{opacity:0;transform:translateY(8px)}.fade-leave-to{opacity:0;transform:translateY(-8px)}
+.card-enter-from,.card-leave-to{opacity:0;transform:scale(.9)}.card-leave-active{position:absolute}
+.toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:#1b1d2a;color:#fff;padding:10px 18px;border-radius:12px;box-shadow:0 8px 24px rgba(0,0,0,.3);z-index:10;max-width:90vw}
+.toast.err{background:#c62828}
+.toast-enter-active,.toast-leave-active{transition:all .3s}
+.toast-enter-from,.toast-leave-to{opacity:0;transform:translate(-50%,20px)}
+.dirty{color:#d97706;font-size:13px}
+.foot{text-align:center;margin-top:20px;font-size:12px}.foot a{color:var(--mut)}
+.loading{padding:40px;text-align:center;color:var(--mut)}
+@media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style></head><body><div id="app"></div><script type="text/x-template" id="tpl">
+<div v-if="!S" class="loading">Загрузка…</div>
+<div v-else class="shell">
+  <header class="top">
+    <div><h1>График курьеров</h1><p>Смена «8-20» — с 8:00 до 20:00, «20-8» — ночная, с 20:00 до 8:00 следующего дня.</p></div>
+    <span v-if="admin" class="badge">Режим редактора</span>
+  </header>
+  <nav v-if="admin" class="tabs">
+    <button v-for="t in tabs" :key="t.id" :class="{on:tab===t.id}" @click="tab=t.id">{{t.name}}</button>
+  </nav>
+  <section v-if="admin" class="card tools">
+    <label>Начало: <input type="date" v-model="S.start" @change="touch"></label>
+    <label>Норма заказов/курьер в час: <input type="number" min="0.5" step="0.5" v-model.number="S.norm" style="width:70px" @change="touch"></label>
+    <button @click="addCourier">+ Курьер</button>
+    <button class="pub" :disabled="busy" @click="publish">{{busy?"Публикую…":"Опубликовать на GitHub"}}</button>
+    <span v-if="dirty" class="dirty">Есть неопубликованные изменения</span>
+    <details><summary>Настройки GitHub</summary>
+      <div class="gh">
+        <label>Репозиторий: <input v-model.trim="G.repo" placeholder="user/repo" @change="saveG"></label>
+        <label>Ветка: <input v-model.trim="G.branch" style="width:90px" @change="saveG"></label>
+        <label>Токен: <input type="password" v-model.trim="G.token" @change="saveG"></label>
+      </div>
+    </details>
+  </section>
+
+  <Transition name="fade" mode="out-in">
+    <div :key="cur">
+      <template v-if="cur===0">
+        <select v-model.number="me" style="margin-bottom:12px">
+          <option :value="-1">Показать всех</option>
+          <option v-for="(n,i) in S.names" :key="i" :value="i">Я — {{n}}</option>
+        </select>
+        <TransitionGroup v-if="me>=0" name="card" tag="div" class="my">
+          <div v-for="s in myShifts" :key="s.k">{{s.label}}, {{s.wd}}<b>{{s.v}}</b></div>
+        </TransitionGroup>
+        <div class="tw"><table>
+          <thead><tr><th class="sticky">Курьер</th><th>Телефон</th><th v-for="d in days" :key="d.k" :class="{we:d.we}">{{d.label}}<small>{{d.wd}}</small></th></tr></thead>
+          <tbody v-for="g in groups" :key="g.id" v-show="g.rows.length"><tr class="grp"><th :colspan="days.length+2">{{g.icon}} {{g.name}} <span>{{g.rows.length}}</span></th></tr><tr v-for="i in g.rows" :key="i" :class="{me:i===me}">
+            <td class="sticky name">{{S.names[i]}}</td>
+            <td><a v-if="tel(S.phones[i])" :href="'tel:'+tel(S.phones[i])">{{S.phones[i]}}</a></td>
+            <td v-for="(v,k) in S.cells[i]" :key="k"><span v-if="v" class="chip" :class="chipClass(v)">{{v}}</span><span v-else class="off">вых</span></td>
+          </tr></tbody>
+        </table></div>
+      </template>
+
+      <template v-else-if="cur===1">
+        <div class="tw"><table>
+          <thead><tr><th class="sticky">Курьер</th><th>Категория</th><th>Телефон</th><th v-for="d in days" :key="d.k" :class="{we:d.we}">{{d.label}}<small>{{d.wd}}</small></th><th></th></tr></thead>
+          <tbody v-for="g in groups" :key="g.id" v-show="g.rows.length"><tr class="grp"><th :colspan="days.length+4">{{g.icon}} {{g.name}} <span>{{g.rows.length}}</span></th></tr><tr v-for="i in g.rows" :key="i">
+            <td class="sticky name"><input v-model="S.names[i]" @change="touch"></td>
+            <td><select v-model="S.cats[i]" @change="touch"><option v-for="c in CATS" :key="c.id" :value="c.id">{{c.name}}</option></select></td>
+            <td><input type="tel" v-model.trim="S.phones[i]" style="min-width:130px" @change="touch"></td>
+            <td v-for="(v,k) in S.cells[i]" :key="k" :class="{bad:v&&!parse(v)}"><input v-model.trim="S.cells[i][k]" @change="touch"></td>
+            <td><button class="x" @click="removeCourier(i)">✕</button></td>
+          </tr></tbody>
+        </table></div>
+        <div class="hint">Красным — неверный формат. Пусто — выходной.</div>
+      </template>
+
+      <template v-else-if="cur===3">
+        <div class="tw"><table>
+          <thead><tr><th class="sticky">Час</th><th v-for="d in days" :key="d.k" :class="{we:d.we}">{{d.label}}<small>{{d.wd}}</small></th></tr></thead>
+          <tbody><tr v-for="h in 24" :key="h">
+            <th class="sticky">{{String(h-1).padStart(2,"0")}}:00</th>
+            <td v-for="k in 14" :key="k"><input inputmode="numeric" v-model.trim="O[k-1][h-1]" @change="saveO"></td>
+          </tr></tbody>
+        </table></div>
+        <div class="hint">Заказы хранятся только в этом браузере и в репозиторий не попадают.</div>
+      </template>
+
+      <template v-else>
+        <div class="tw"><table>
+          <thead><tr><th class="sticky">Час</th><th v-for="d in days" :key="d.k" :class="{we:d.we}">{{d.label}}<small>{{d.wd}}</small></th></tr></thead>
+          <tbody><tr v-for="h in 24" :key="h">
+            <th class="sticky">{{String(h-1).padStart(2,"0")}}:00</th>
+            <td v-for="k in 14" :key="k" class="heat" :style="heat(k-1,h-1)">{{ratio(k-1,h-1)}}<small>{{O[k-1][h-1]||0}}/{{L[k-1][h-1]}}</small></td>
+          </tr></tbody>
+        </table></div>
+        <div class="hint">Сверху: заказов на курьера; ниже: заказы/курьеры на линии. Красным — выше нормы, ∞ — заказы есть, курьеров нет.</div>
+      </template>
+    </div>
+  </Transition>
+  <footer class="foot"><a v-if="!admin" href="#/admin">Редактор</a><a v-else-if="!isFile" href="#/">Выйти из редактора</a></footer>
+</div>
+<Transition name="toast"><div v-if="msg" class="toast" :class="{err:isErr}">{{msg}}</div></Transition>
+</script><script src="https://cdn.jsdelivr.net/npm/vue@3.5.13/dist/vue.global.prod.js"></script><script>
+const {createApp,ref,reactive,computed,onMounted}=Vue;
+const KO="courier-orders-v1",KD="courier-draft-v1",KG="courier-gh-v1",DAYS=14,WD=["Вс","Пн","Вт","Ср","Чт","Пт","Сб"];
+const blank=()=>Array.from({length:DAYS},()=>Array(24).fill(""));
+const sample=()=>{const names=[],cells=[];for(let i=0;i<8;i++){names.push("Курьер "+(i+1));cells.push(Array.from({length:DAYS},(_,k)=>(k+i)%4<2?(i>=4?"20-8":"8-20"):""))}
+  return{start:new Date().toISOString().slice(0,10),names,phones:names.map(()=>""),cells,norm:3}};
+const CATS=[{id:"m",name:"Утренние курьеры",icon:"🌅"},{id:"e",name:"Вечерние курьеры",icon:"🌆"},{id:"n",name:"Ночные курьеры",icon:"🌙"}];
+const jget=(k,d)=>{try{return JSON.parse(localStorage.getItem(k))||d}catch(e){return d}};
+const jset=(k,v)=>{try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}};
+function guess(row){const p=row.map(parse).filter(Boolean);if(!p.length)return"m";if(p.some(x=>x[0]>x[1]))return"n";return p[0][0]<14?"m":"e"}
+function parse(v){const m=/^\s*(\d{1,2})\s*[-–—]\s*(\d{1,2})\s*$/.exec(v||"");if(!m)return null;const a=+m[1],b=+m[2];return a>24||b>24||a===b?null:[a,b]}
+createApp({template:document.getElementById("tpl").textContent,setup(){
+  const S=ref(null),O=reactive(jget(KO,blank())),G=reactive(Object.assign({repo:"",branch:"main",token:""},jget(KG,{})));
+  const isFile=location.protocol==="file:",isAdm=()=>isFile||location.hash==="#/admin",admin=ref(isAdm()),tab=ref(0),me=ref(-1),dirty=ref(false),busy=ref(false),msg=ref(""),isErr=ref(false);
+  let timer;
+  const toast=(t,err=false,keep=false)=>{msg.value=t;isErr.value=err;clearTimeout(timer);if(!keep)timer=setTimeout(()=>msg.value="",6000)};
+  const tabs=[{id:0,name:"График"},{id:1,name:"Редактировать смены"},{id:3,name:"Заказы по часам"},{id:2,name:"Нагрузка на курьера"}];
+  const cur=computed(()=>admin.value?tab.value:0);
+  const days=computed(()=>S.value?Array.from({length:DAYS},(_,k)=>{const d=new Date(S.value.start+"T12:00:00");d.setDate(d.getDate()+k);
+    return{k,label:String(d.getDate()).padStart(2,"0")+"."+String(d.getMonth()+1).padStart(2,"0"),wd:WD[d.getDay()],we:d.getDay()%6===0}}):[]);
+  const myShifts=computed(()=>me.value<0?[]:S.value.cells[me.value].map((v,k)=>v?{k,v,label:days.value[k].label,wd:days.value[k].wd}:null).filter(Boolean));
+  const L=computed(()=>{const a=Array.from({length:DAYS+1},()=>Array(24).fill(0));
+    S.value.cells.forEach(r=>r.forEach((v,k)=>{const p=parse(v);if(!p)return;const[x,y]=p;
+      if(x<y){for(let h=x;h<y;h++)a[k][h%24]++}else{for(let h=x;h<24;h++)a[k][h]++;for(let h=0;h<y;h++)a[k+1][h]++}}));
+    return a.slice(0,DAYS)});
+  const q=(k,h)=>{const c=L.value[k][h],o=+O[k][h]||0;return c?o/c:(o?Infinity:0)};
+  const ratio=(k,h)=>{const v=q(k,h);return v===Infinity?"∞":(v?+v.toFixed(1):"–")};
+  const heat=(k,h)=>{const v=q(k,h),n=S.value.norm||3;if(!v)return{};
+    return v>n?{background:"rgba(239,68,68,.45)"}:{background:`color-mix(in srgb,var(--acc) ${Math.round(Math.min(.85,v/n*.5)*100)}%,transparent)`}};
+  const chipClass=v=>{const p=parse(v);return p?(p[0]>p[1]?"n":"d"):"o"};
+  const groups=computed(()=>CATS.map(c=>Object.assign({rows:S.value.names.map((_,i)=>i).filter(i=>S.value.cats[i]===c.id)},c)));
+  const tel=p=>(p||"").replace(/[^\d+]/g,"");
+  const touch=()=>{dirty.value=true;jset(KD,S.value)};
+  const saveO=()=>jset(KO,O),saveG=()=>jset(KG,G);
+  const addCourier=()=>{const s=S.value;s.names.push("Курьер "+(s.names.length+1));s.phones.push("");s.cats.push("m");s.cells.push(Array(DAYS).fill(""));tab.value=1;touch()};
+  const removeCourier=i=>{if(!confirm("Удалить курьера?"))return;const s=S.value;s.names.splice(i,1);s.phones.splice(i,1);s.cats.splice(i,1);s.cells.splice(i,1);touch()};
+  async function publish(){
+    if(!G.repo||!G.token)return toast("Укажите репозиторий и токен в настройках GitHub.",true);
+    const api="https://api.github.com/repos/"+G.repo+"/contents/data/schedule.json",hd={Authorization:"Bearer "+G.token,Accept:"application/vnd.github+json"};
+    busy.value=true;
+    try{
+      let sha;const g=await fetch(api+"?ref="+encodeURIComponent(G.branch),{headers:hd});
+      if(g.ok)sha=(await g.json()).sha;else if(g.status!=404)throw new Error(g.status);
+      const body=JSON.stringify(S.value,null,1);
+      const p=await fetch(api,{method:"PUT",headers:hd,body:JSON.stringify({message:"Update schedule",branch:G.branch,sha,content:btoa(unescape(encodeURIComponent(body)))})});
+      if(!p.ok)throw new Error(p.status);
+      localStorage.removeItem(KD);dirty.value=false;toast("Опубликовано. Страница обновится через 1–2 минуты.");
+    }catch(e){toast("Не удалось опубликовать (код "+e.message+"). Проверьте репозиторий, ветку и права токена.",true)}
+    busy.value=false}
+  onMounted(async()=>{
+    window.addEventListener("hashchange",()=>{admin.value=isAdm();tab.value=0});
+    let d=null;try{const r=await fetch("data/schedule.json?"+Date.now());if(r.ok)d=await r.json()}catch(e){}
+    d=d||sample();
+    if(admin.value){const dr=jget(KD,null);if(dr&&dr.cells){d=dr;dirty.value=true;toast("Загружен несохранённый черновик.")}}
+    d.phones=d.phones||[];while(d.phones.length<d.names.length)d.phones.push("");
+    d.cats=d.cats||[];while(d.cats.length<d.names.length)d.cats.push(guess(d.cells[d.cats.length]));
+    S.value=d});
+  return{isFile,CATS,groups,S,O,G,admin,tab,tabs,cur,me,dirty,busy,msg,isErr,days,myShifts,L,ratio,heat,chipClass,tel,parse,touch,saveO,saveG,addCourier,removeCourier,publish};
+}}).mount("#app");
+</script></body></html>
