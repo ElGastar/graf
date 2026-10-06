@@ -35,14 +35,14 @@ tr.me td{background:rgba(125,139,255,.2)!important}
 @keyframes rowin{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
 tr.grp th{position:static;text-align:left;padding:8px 12px;font-size:13px;background:linear-gradient(90deg,rgba(125,139,255,.2),transparent)}
 .grp span{background:var(--acc);color:#fff;border-radius:99px;padding:0 8px;font-size:11px;margin-left:6px}
-.chip{display:inline-block;padding:2px 8px;border-radius:99px;font-size:12px;font-weight:600}
-.chip.d{background:var(--day);color:var(--dayf)}.chip.d::before{content:"☀ "}
-.chip.n{background:var(--ngt);color:var(--ngf)}.chip.n::before{content:"☾ "}
-.chip.o{background:rgba(var(--bad),.2)}
+.chip{display:inline-block;min-width:50px;text-align:center;padding:2px 8px;border-radius:99px;font-size:12px;font-weight:600}
+.chip.d{background:var(--day);color:var(--dayf)}.chip.n{background:var(--ngt);color:var(--ngf)}.chip.o{background:rgba(var(--bad),.2)}
 .off{color:var(--mut);font-size:12px}
 td input{width:100%;border:0;background:transparent;padding:8px 4px;text-align:center}
 td.name input{text-align:left;padding-left:8px}
 td input:focus{outline:2px solid var(--acc);outline-offset:-2px;border-radius:6px;background:var(--bg)}
+th.fri{color:var(--acc);background:rgba(125,139,255,.14)}th.we{color:var(--acc);background:rgba(125,139,255,.26)}
+td.fri{background:rgba(125,139,255,.08)}td.we{background:rgba(125,139,255,.16)}
 td.bad{background:rgba(var(--bad),.2)}
 .x{border:0;background:none;color:var(--mut);padding:2px 8px}
 .my{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:8px;margin:0 0 12px;position:relative}
@@ -59,6 +59,7 @@ td.bad{background:rgba(var(--bad),.2)}
 .toast-enter-from,.toast-leave-to{opacity:0;transform:translate(-50%,20px)}
 .dirty{color:#d97706;font-size:13px}
 .foot{text-align:center;margin-top:20px;font-size:12px}.foot a{color:var(--mut)}
+.gate form{display:flex;flex-wrap:wrap;gap:10px;align-items:center}.gate input{border:1px solid var(--line);background:var(--bg);border-radius:8px;padding:8px 10px}
 .loading{padding:40px;text-align:center;color:var(--mut)}
 @media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
 </style></head><body><div id="app"></div><script type="text/x-template" id="tpl">
@@ -66,12 +67,31 @@ td.bad{background:rgba(var(--bad),.2)}
 <div v-else class="shell">
   <header class="top">
     <div><h1>График курьеров</h1><p>Смена «8-20» — с 8:00 до 20:00, «20-8» — ночная, с 20:00 до 8:00 следующего дня.</p></div>
-    <span v-if="admin" class="badge">Режим редактора</span>
+    <span v-if="editor" class="badge">Режим редактора</span>
   </header>
-  <nav v-if="admin" class="tabs">
+  <section v-if="admin&&!editor" class="card gate">
+    <div v-if="auth==='checking'">Проверка…</div>
+    <form v-else-if="auth==='login'" @submit.prevent="login">
+      <b>Вход в редактор</b>
+      <input type="password" v-model="pw" placeholder="Пароль" autocomplete="current-password">
+      <button class="pub" :disabled="busy">Войти</button>
+    </form>
+    <form v-else-if="auth==='setup'" @submit.prevent="setup">
+      <b>Первый запуск: задайте пароль редактора</b>
+      <p class="hint" style="width:100%;margin:0">Пароль сохранится в репозитории в виде хэша (файл data/auth.json). Для записи нужны репозиторий и токен GitHub.</p>
+      <input v-model.trim="G.repo" placeholder="user/repo" @change="saveG">
+      <input v-model.trim="G.branch" placeholder="ветка" style="width:90px" @change="saveG">
+      <input type="password" v-model.trim="G.token" placeholder="Токен GitHub" @change="saveG">
+      <input type="password" v-model="pw" placeholder="Новый пароль (от 6 символов)" autocomplete="new-password">
+      <input type="password" v-model="pw2" placeholder="Повторите пароль" autocomplete="new-password">
+      <button class="pub" :disabled="busy">Задать пароль</button>
+    </form>
+    <div v-else>Не удалось проверить пароль. <button @click="checkAuth">Повторить</button></div>
+  </section>
+  <nav v-if="editor" class="tabs">
     <button v-for="t in tabs" :key="t.id" :class="{on:tab===t.id}" @click="tab=t.id">{{t.name}}</button>
   </nav>
-  <section v-if="admin" class="card tools">
+  <section v-if="editor" class="card tools">
     <label>Начало: <input type="date" v-model="S.start" @change="touch"></label>
     <label>Норма заказов/курьер в час: <input type="number" min="0.5" step="0.5" v-model.number="S.norm" style="width:70px" @change="touch"></label>
     <button @click="addCourier">+ Курьер</button>
@@ -97,23 +117,23 @@ td.bad{background:rgba(var(--bad),.2)}
           <div v-for="s in myShifts" :key="s.k">{{s.label}}, {{s.wd}}<b>{{s.v}}</b></div>
         </TransitionGroup>
         <div class="tw"><table>
-          <thead><tr><th class="sticky">Курьер</th><th>Телефон</th><th v-for="d in days" :key="d.k" :class="{we:d.we}">{{d.label}}<small>{{d.wd}}</small></th></tr></thead>
+          <thead><tr><th class="sticky">Курьер</th><th>Телефон</th><th v-for="d in days" :key="d.k" :class="{we:d.we,fri:d.fri}">{{d.label}}<small>{{d.wd}}</small></th></tr></thead>
           <tbody v-for="g in groups" :key="g.id" v-show="g.rows.length"><tr class="grp"><th :colspan="days.length+2">{{g.icon}} {{g.name}} <span>{{g.rows.length}}</span></th></tr><tr v-for="i in g.rows" :key="i" :class="{me:i===me}">
             <td class="sticky name">{{S.names[i]}}</td>
             <td><a v-if="tel(S.phones[i])" :href="'tel:'+tel(S.phones[i])">{{S.phones[i]}}</a></td>
-            <td v-for="(v,k) in S.cells[i]" :key="k"><span v-if="v" class="chip" :class="chipClass(v)">{{v}}</span><span v-else class="off">вых</span></td>
+            <td v-for="(v,k) in S.cells[i]" :key="k" :class="dcl(k)"><span v-if="v" class="chip" :class="chipClass(v)">{{v}}</span><span v-else class="off">вых</span></td>
           </tr></tbody>
         </table></div>
       </template>
 
       <template v-else-if="cur===1">
         <div class="tw"><table>
-          <thead><tr><th class="sticky">Курьер</th><th>Категория</th><th>Телефон</th><th v-for="d in days" :key="d.k" :class="{we:d.we}">{{d.label}}<small>{{d.wd}}</small></th><th></th></tr></thead>
+          <thead><tr><th class="sticky">Курьер</th><th>Категория</th><th>Телефон</th><th v-for="d in days" :key="d.k" :class="{we:d.we,fri:d.fri}">{{d.label}}<small>{{d.wd}}</small></th><th></th></tr></thead>
           <tbody v-for="g in groups" :key="g.id" v-show="g.rows.length"><tr class="grp"><th :colspan="days.length+4">{{g.icon}} {{g.name}} <span>{{g.rows.length}}</span></th></tr><tr v-for="i in g.rows" :key="i">
             <td class="sticky name"><input v-model="S.names[i]" @change="touch"></td>
             <td><select v-model="S.cats[i]" @change="touch"><option v-for="c in CATS" :key="c.id" :value="c.id">{{c.name}}</option></select></td>
             <td><input type="tel" v-model.trim="S.phones[i]" style="min-width:130px" @change="touch"></td>
-            <td v-for="(v,k) in S.cells[i]" :key="k" :class="{bad:v&&!parse(v)}"><input v-model.trim="S.cells[i][k]" @change="touch"></td>
+            <td v-for="(v,k) in S.cells[i]" :key="k" :class="[dcl(k),{bad:v&&!parse(v)}]"><input v-model.trim="S.cells[i][k]" @change="touch"></td>
             <td><button class="x" @click="removeCourier(i)">✕</button></td>
           </tr></tbody>
         </table></div>
@@ -122,10 +142,10 @@ td.bad{background:rgba(var(--bad),.2)}
 
       <template v-else-if="cur===3">
         <div class="tw"><table>
-          <thead><tr><th class="sticky">Час</th><th v-for="d in days" :key="d.k" :class="{we:d.we}">{{d.label}}<small>{{d.wd}}</small></th></tr></thead>
+          <thead><tr><th class="sticky">Час</th><th v-for="d in days" :key="d.k" :class="{we:d.we,fri:d.fri}">{{d.label}}<small>{{d.wd}}</small></th></tr></thead>
           <tbody><tr v-for="h in 24" :key="h">
             <th class="sticky">{{String(h-1).padStart(2,"0")}}:00</th>
-            <td v-for="k in 14" :key="k"><input inputmode="numeric" v-model.trim="O[k-1][h-1]" @change="saveO"></td>
+            <td v-for="k in 14" :key="k" :class="dcl(k-1)"><input inputmode="numeric" v-model.trim="O[k-1][h-1]" @change="saveO"></td>
           </tr></tbody>
         </table></div>
         <div class="hint">Заказы хранятся только в этом браузере и в репозиторий не попадают.</div>
@@ -133,17 +153,17 @@ td.bad{background:rgba(var(--bad),.2)}
 
       <template v-else>
         <div class="tw"><table>
-          <thead><tr><th class="sticky">Час</th><th v-for="d in days" :key="d.k" :class="{we:d.we}">{{d.label}}<small>{{d.wd}}</small></th></tr></thead>
+          <thead><tr><th class="sticky">Час</th><th v-for="d in days" :key="d.k" :class="{we:d.we,fri:d.fri}">{{d.label}}<small>{{d.wd}}</small></th></tr></thead>
           <tbody><tr v-for="h in 24" :key="h">
             <th class="sticky">{{String(h-1).padStart(2,"0")}}:00</th>
-            <td v-for="k in 14" :key="k" class="heat" :style="heat(k-1,h-1)">{{ratio(k-1,h-1)}}<small>{{O[k-1][h-1]||0}}/{{L[k-1][h-1]}}</small></td>
+            <td v-for="k in 14" :key="k" class="heat" :class="dcl(k-1)" :style="heat(k-1,h-1)">{{ratio(k-1,h-1)}}<small>{{O[k-1][h-1]||0}}/{{L[k-1][h-1]}}</small></td>
           </tr></tbody>
         </table></div>
         <div class="hint">Сверху: заказов на курьера; ниже: заказы/курьеры на линии. Красным — выше нормы, ∞ — заказы есть, курьеров нет.</div>
       </template>
     </div>
   </Transition>
-  <footer class="foot"><a v-if="!admin" href="#/admin">Редактор</a><a v-else-if="!isFile" href="#/">Выйти из редактора</a></footer>
+  <footer class="foot"><a v-if="!admin" href="#/admin">Редактор</a><a v-else-if="!isFile" href="#/" @click="logout">Выйти из редактора</a></footer>
 </div>
 <Transition name="toast"><div v-if="msg" class="toast" :class="{err:isErr}">{{msg}}</div></Transition>
 </script><script src="https://cdn.jsdelivr.net/npm/vue@3.5.13/dist/vue.global.prod.js"></script><script>
@@ -152,7 +172,7 @@ const KO="courier-orders-v1",KD="courier-draft-v1",KG="courier-gh-v1",DAYS=14,WD
 const blank=()=>Array.from({length:DAYS},()=>Array(24).fill(""));
 const sample=()=>{const names=[],cells=[];for(let i=0;i<8;i++){names.push("Курьер "+(i+1));cells.push(Array.from({length:DAYS},(_,k)=>(k+i)%4<2?(i>=4?"20-8":"8-20"):""))}
   return{start:new Date().toISOString().slice(0,10),names,phones:names.map(()=>""),cells,norm:3}};
-const CATS=[{id:"m",name:"Утренние курьеры",icon:"🌅"},{id:"e",name:"Вечерние курьеры",icon:"🌆"},{id:"n",name:"Ночные курьеры",icon:"🌙"}];
+const CATS=[{id:"m",name:"Утренние курьеры",icon:"🌅"},{id:"d",name:"Дневные курьеры",icon:"☀️"},{id:"e",name:"Вечерние курьеры",icon:"🌆"},{id:"n",name:"Ночные курьеры",icon:"🌙"}];
 const jget=(k,d)=>{try{return JSON.parse(localStorage.getItem(k))||d}catch(e){return d}};
 const jset=(k,v)=>{try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}};
 function guess(row){const p=row.map(parse).filter(Boolean);if(!p.length)return"m";if(p.some(x=>x[0]>x[1]))return"n";return p[0][0]<14?"m":"e"}
@@ -163,9 +183,11 @@ createApp({template:document.getElementById("tpl").textContent,setup(){
   let timer;
   const toast=(t,err=false,keep=false)=>{msg.value=t;isErr.value=err;clearTimeout(timer);if(!keep)timer=setTimeout(()=>msg.value="",6000)};
   const tabs=[{id:0,name:"График"},{id:1,name:"Редактировать смены"},{id:3,name:"Заказы по часам"},{id:2,name:"Нагрузка на курьера"}];
-  const cur=computed(()=>admin.value?tab.value:0);
+  const auth=ref("checking"),pw=ref(""),pw2=ref(""),KS="courier-auth-ok";
+  const editor=computed(()=>admin.value&&(isFile||auth.value==="ok"));
+  const cur=computed(()=>editor.value?tab.value:0);
   const days=computed(()=>S.value?Array.from({length:DAYS},(_,k)=>{const d=new Date(S.value.start+"T12:00:00");d.setDate(d.getDate()+k);
-    return{k,label:String(d.getDate()).padStart(2,"0")+"."+String(d.getMonth()+1).padStart(2,"0"),wd:WD[d.getDay()],we:d.getDay()%6===0}}):[]);
+    return{k,label:String(d.getDate()).padStart(2,"0")+"."+String(d.getMonth()+1).padStart(2,"0"),wd:WD[d.getDay()],we:d.getDay()%6===0,fri:d.getDay()===5}}):[]);
   const myShifts=computed(()=>me.value<0?[]:S.value.cells[me.value].map((v,k)=>v?{k,v,label:days.value[k].label,wd:days.value[k].wd}:null).filter(Boolean));
   const L=computed(()=>{const a=Array.from({length:DAYS+1},()=>Array(24).fill(0));
     S.value.cells.forEach(r=>r.forEach((v,k)=>{const p=parse(v);if(!p)return;const[x,y]=p;
@@ -177,32 +199,64 @@ createApp({template:document.getElementById("tpl").textContent,setup(){
     return v>n?{background:"rgba(239,68,68,.45)"}:{background:`color-mix(in srgb,var(--acc) ${Math.round(Math.min(.85,v/n*.5)*100)}%,transparent)`}};
   const chipClass=v=>{const p=parse(v);return p?(p[0]>p[1]?"n":"d"):"o"};
   const groups=computed(()=>CATS.map(c=>Object.assign({rows:S.value.names.map((_,i)=>i).filter(i=>S.value.cats[i]===c.id)},c)));
+  const dcl=k=>{const d=days.value[k];return{we:d.we,fri:d.fri}};
   const tel=p=>(p||"").replace(/[^\d+]/g,"");
   const touch=()=>{dirty.value=true;jset(KD,S.value)};
   const saveO=()=>jset(KO,O),saveG=()=>jset(KG,G);
   const addCourier=()=>{const s=S.value;s.names.push("Курьер "+(s.names.length+1));s.phones.push("");s.cats.push("m");s.cells.push(Array(DAYS).fill(""));tab.value=1;touch()};
   const removeCourier=i=>{if(!confirm("Удалить курьера?"))return;const s=S.value;s.names.splice(i,1);s.phones.splice(i,1);s.cats.splice(i,1);s.cells.splice(i,1);touch()};
+  async function putFile(path,text,message){
+    const api="https://api.github.com/repos/"+G.repo+"/contents/"+path,hd={Authorization:"Bearer "+G.token,Accept:"application/vnd.github+json"};
+    let sha;const g=await fetch(api+"?ref="+encodeURIComponent(G.branch),{headers:hd});
+    if(g.ok)sha=(await g.json()).sha;else if(g.status!=404)throw new Error(g.status);
+    const p=await fetch(api,{method:"PUT",headers:hd,body:JSON.stringify({message,branch:G.branch,sha,content:btoa(unescape(encodeURIComponent(text)))})});
+    if(!p.ok)throw new Error(p.status)}
   async function publish(){
     if(!G.repo||!G.token)return toast("Укажите репозиторий и токен в настройках GitHub.",true);
-    const api="https://api.github.com/repos/"+G.repo+"/contents/data/schedule.json",hd={Authorization:"Bearer "+G.token,Accept:"application/vnd.github+json"};
     busy.value=true;
-    try{
-      let sha;const g=await fetch(api+"?ref="+encodeURIComponent(G.branch),{headers:hd});
-      if(g.ok)sha=(await g.json()).sha;else if(g.status!=404)throw new Error(g.status);
-      const body=JSON.stringify(S.value,null,1);
-      const p=await fetch(api,{method:"PUT",headers:hd,body:JSON.stringify({message:"Update schedule",branch:G.branch,sha,content:btoa(unescape(encodeURIComponent(body)))})});
-      if(!p.ok)throw new Error(p.status);
+    try{await putFile("data/schedule.json",JSON.stringify(S.value,null,1),"Update schedule");
       localStorage.removeItem(KD);dirty.value=false;toast("Опубликовано. Страница обновится через 1–2 минуты.");
     }catch(e){toast("Не удалось опубликовать (код "+e.message+"). Проверьте репозиторий, ветку и права токена.",true)}
     busy.value=false}
+  const b64=a=>btoa(String.fromCharCode(...new Uint8Array(a))),unb64=t=>Uint8Array.from(atob(t),c=>c.charCodeAt(0));
+  async function derive(p,salt){const k=await crypto.subtle.importKey("raw",new TextEncoder().encode(p),"PBKDF2",false,["deriveBits"]);
+    return b64(await crypto.subtle.deriveBits({name:"PBKDF2",hash:"SHA-256",salt,iterations:200000},k,256))}
+  let authData=null;
+  async function checkAuth(){
+    if(!admin.value||isFile){auth.value="ok";return}
+    if(sessionStorage.getItem(KS)==="1"){auth.value="ok";return}
+    auth.value="checking";
+    try{const r=await fetch("data/auth.json?"+Date.now());
+      if(r.ok){authData=await r.json();auth.value="login"}else auth.value=r.status==404?"setup":"error"}
+    catch(e){auth.value="error"}}
+  async function login(){
+    if(!(window.crypto&&crypto.subtle))return toast("Браузер не поддерживает проверку пароля (нужен https).",true);
+    busy.value=true;
+    try{const h=await derive(pw.value,unb64(authData.salt));
+      if(h===authData.hash){sessionStorage.setItem(KS,"1");auth.value="ok";pw.value=""}else toast("Неверный пароль.",true)}
+    catch(e){toast("Не удалось проверить пароль.",true)}
+    busy.value=false}
+  async function setup(){
+    if(!(window.crypto&&crypto.subtle))return toast("Браузер не поддерживает хэширование (нужен https).",true);
+    if(pw.value.length<6)return toast("Пароль: не меньше 6 символов.",true);
+    if(pw.value!==pw2.value)return toast("Пароли не совпадают.",true);
+    if(!G.repo||!G.token)return toast("Укажите репозиторий и токен.",true);
+    busy.value=true;
+    try{const salt=crypto.getRandomValues(new Uint8Array(16));
+      await putFile("data/auth.json",JSON.stringify({salt:b64(salt),hash:await derive(pw.value,salt)}),"Set editor password");
+      sessionStorage.setItem(KS,"1");auth.value="ok";pw.value=pw2.value="";toast("Пароль задан.")}
+    catch(e){toast("Не удалось сохранить пароль (код "+e.message+"). Проверьте репозиторий, ветку и токен.",true)}
+    busy.value=false}
+  const logout=()=>sessionStorage.removeItem(KS);
   onMounted(async()=>{
-    window.addEventListener("hashchange",()=>{admin.value=isAdm();tab.value=0});
+    checkAuth();
+    window.addEventListener("hashchange",()=>{admin.value=isAdm();tab.value=0;checkAuth()});
     let d=null;try{const r=await fetch("data/schedule.json?"+Date.now());if(r.ok)d=await r.json()}catch(e){}
     d=d||sample();
     if(admin.value){const dr=jget(KD,null);if(dr&&dr.cells){d=dr;dirty.value=true;toast("Загружен несохранённый черновик.")}}
     d.phones=d.phones||[];while(d.phones.length<d.names.length)d.phones.push("");
     d.cats=d.cats||[];while(d.cats.length<d.names.length)d.cats.push(guess(d.cells[d.cats.length]));
     S.value=d});
-  return{isFile,CATS,groups,S,O,G,admin,tab,tabs,cur,me,dirty,busy,msg,isErr,days,myShifts,L,ratio,heat,chipClass,tel,parse,touch,saveO,saveG,addCourier,removeCourier,publish};
+  return{dcl,auth,pw,pw2,editor,login,setup,checkAuth,logout,isFile,CATS,groups,S,O,G,admin,tab,tabs,cur,me,dirty,busy,msg,isErr,days,myShifts,L,ratio,heat,chipClass,tel,parse,touch,saveO,saveG,addCourier,removeCourier,publish};
 }}).mount("#app");
 </script></body></html>
