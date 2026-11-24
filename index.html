@@ -44,6 +44,10 @@ td input:focus{outline:2px solid var(--acc);outline-offset:-2px;border-radius:6p
 th.fri{color:var(--acc);background:rgba(125,139,255,.14)}th.we{color:var(--acc);background:rgba(125,139,255,.26)}
 td.fri{background:rgba(125,139,255,.08)}td.we{background:rgba(125,139,255,.16)}
 td.bad{background:rgba(var(--bad),.2)}
+td.sel{background:rgba(91,108,255,.35)!important;box-shadow:inset 0 0 0 2px var(--acc)}
+.cv{display:block;padding:8px 4px;min-height:34px;cursor:cell}
+.selmode{user-select:none}th.clk,td.clk{cursor:pointer}
+.selbar{display:flex;flex-wrap:wrap;gap:8px;align-items:center}.selbar input{border:1px solid var(--line);background:var(--bg);border-radius:8px;padding:6px 8px}
 .x{border:0;background:none;color:var(--mut);padding:2px 8px}
 .my{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:8px;margin:0 0 12px;position:relative}
 .my div{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:8px 10px;transition:all .3s}
@@ -127,13 +131,23 @@ td.bad{background:rgba(var(--bad),.2)}
       </template>
 
       <template v-else-if="cur===1">
-        <div class="tw"><table>
-          <thead><tr><th class="sticky">Курьер</th><th>Категория</th><th>Телефон</th><th v-for="d in days" :key="d.k" :class="{we:d.we,fri:d.fri}">{{d.label}}<small>{{d.wd}}</small></th><th></th></tr></thead>
+        <div class="card selbar">
+          <button :class="{on:selMode}" @click="toggleSelMode">{{selMode?"Выйти из режима выделения":"Выделить ячейки"}}</button>
+          <template v-if="selMode">
+            <span>Выбрано: <b>{{sel.size}}</b></span>
+            <button :disabled="!sel.size" @click="copyCells">Копировать</button>
+            <button :disabled="!sel.size||!clipN" @click="pasteCells">Вставить</button>
+            <button :disabled="!sel.size" @click="clearCells">Очистить ячейки</button>
+            <span class="hint" style="margin:0;width:100%">Выделяйте ячейки кликом или протяжкой мыши (Shift+клик — прямоугольник, клик по дате или имени — столбец или строка). Одну скопированную ячейку можно вставить сразу во все выделенные, а блок вставится от левой верхней выделенной ячейки.</span>
+          </template>
+        </div>
+        <div class="tw" :class="{selmode:selMode}"><table>
+          <thead><tr><th class="sticky">Курьер</th><th>Категория</th><th>Телефон</th><th v-for="d in days" :key="d.k" :class="{we:d.we,fri:d.fri,clk:selMode}" @click="selMode&&toggleCol(d.k)">{{d.label}}<small>{{d.wd}}</small></th><th></th></tr></thead>
           <tbody v-for="g in groups" :key="g.id" v-show="g.rows.length"><tr class="grp"><th :colspan="days.length+4">{{g.icon}} {{g.name}} <span>{{g.rows.length}}</span></th></tr><tr v-for="i in g.rows" :key="i">
-            <td class="sticky name"><input v-model="S.names[i]" @change="touch"></td>
+            <td class="sticky name" :class="{clk:selMode}" @click="selMode&&toggleRow(i)"><input v-if="!selMode" v-model="S.names[i]" @change="touch"><span v-else class="cv">{{S.names[i]}}</span></td>
             <td><select v-model="S.cats[i]" @change="touch"><option v-for="c in CATS" :key="c.id" :value="c.id">{{c.name}}</option></select></td>
             <td><input type="tel" v-model.trim="S.phones[i]" style="min-width:130px" @change="touch"></td>
-            <td v-for="(v,k) in S.cells[i]" :key="k" :class="[dcl(k),{bad:v&&!parse(v)}]"><input v-model.trim="S.cells[i][k]" @change="touch"></td>
+            <td v-for="(v,k) in S.cells[i]" :key="k" :class="[dcl(k),{bad:v&&!parse(v),sel:selMode&&isSel(i,k)}]" @mousedown="cellDown(i,k,$event)" @mouseenter="cellEnter(i,k)"><input v-if="!selMode" v-model.trim="S.cells[i][k]" @change="touch"><span v-else class="cv">{{v}}</span></td>
             <td><button class="x" @click="removeCourier(i)">✕</button></td>
           </tr></tbody>
         </table></div>
@@ -141,11 +155,18 @@ td.bad{background:rgba(var(--bad),.2)}
       </template>
 
       <template v-else-if="cur===3">
+        <div class="card selbar">
+          <b>Вставка столбцом</b>
+          <select v-model.number="pasteDay"><option v-for="d in days" :key="d.k" :value="d.k">{{d.label}} {{d.wd}}</option></select>
+          <textarea v-model="pasteText" rows="3" placeholder="Вставьте сюда данные из другой таблицы: значения с 00:00 до 23:00 столбцом" style="flex:1;min-width:240px;border:1px solid var(--line);background:var(--bg);color:var(--fg);border-radius:8px;padding:6px 8px;font:inherit"></textarea>
+          <button class="pub" :disabled="!pasteText.trim()" @click="pasteColumn">Вставить в столбец</button>
+          <span class="hint" style="margin:0;width:100%">Либо скопируйте столбец в другой таблице, встаньте в первую ячейку нужного дня в таблице ниже и нажмите Ctrl+V (Cmd+V).</span>
+        </div>
         <div class="tw"><table>
           <thead><tr><th class="sticky">Час</th><th v-for="d in days" :key="d.k" :class="{we:d.we,fri:d.fri}">{{d.label}}<small>{{d.wd}}</small></th></tr></thead>
           <tbody><tr v-for="h in 24" :key="h">
             <th class="sticky">{{String(h-1).padStart(2,"0")}}:00</th>
-            <td v-for="k in 14" :key="k" :class="dcl(k-1)"><input inputmode="numeric" v-model.trim="O[k-1][h-1]" @change="saveO"></td>
+            <td v-for="k in 14" :key="k" :class="dcl(k-1)"><input inputmode="numeric" v-model.trim="O[k-1][h-1]" @change="saveO" @paste="onPaste(k-1,h-1,$event)"></td>
           </tr></tbody>
         </table></div>
         <div class="hint">Заказы хранятся только в этом браузере и в репозиторий не попадают.</div>
@@ -200,11 +221,47 @@ createApp({template:document.getElementById("tpl").textContent,setup(){
   const chipClass=v=>{const p=parse(v);return p?(p[0]>p[1]?"n":"d"):"o"};
   const groups=computed(()=>CATS.map(c=>Object.assign({rows:S.value.names.map((_,i)=>i).filter(i=>S.value.cats[i]===c.id)},c)));
   const dcl=k=>{const d=days.value[k];return{we:d.we,fri:d.fri}};
+  const selMode=ref(false),sel=reactive(new Set());let anchor=null,dragging=false,dragAdd=true;
+  const key=(i,k)=>i+":"+k,isSel=(i,k)=>sel.has(key(i,k)),order=()=>groups.value.flatMap(g=>g.rows);
+  const setSel=(i,k,on)=>on?sel.add(key(i,k)):sel.delete(key(i,k));
+  function cellDown(i,k,e){if(!selMode.value)return;e.preventDefault();
+    if(e.shiftKey&&anchor){const o=order(),a=o.indexOf(anchor.i),b=o.indexOf(i),c0=Math.min(anchor.k,k),c1=Math.max(anchor.k,k);
+      for(let r=Math.min(a,b);r<=Math.max(a,b);r++)for(let c=c0;c<=c1;c++)sel.add(key(o[r],c));return}
+    anchor={i,k};dragging=true;dragAdd=!isSel(i,k);setSel(i,k,dragAdd)}
+  const cellEnter=(i,k)=>{if(dragging)setSel(i,k,dragAdd)};
+  function toggleCol(k){const o=order(),all=o.every(i=>isSel(i,k));o.forEach(i=>setSel(i,k,!all))}
+  function toggleRow(i){const all=S.value.cells[i].every((_,k)=>isSel(i,k));S.value.cells[i].forEach((_,k)=>setSel(i,k,!all))}
+  const selectAll=()=>order().forEach(i=>S.value.cells[i].forEach((_,k)=>sel.add(key(i,k))));
+  const toggleSelMode=()=>{selMode.value=!selMode.value;sel.clear();anchor=null};
+  let clip=null;const clipN=ref(0);
+  const selCells=()=>{const o=order(),r=[];sel.forEach(x=>{const[i,c]=x.split(":");r.push({r:o.indexOf(+i),c:+c})});return r};
+  function copyCells(){const L=selCells();if(!L.length)return;
+    const r0=Math.min(...L.map(x=>x.r)),c0=Math.min(...L.map(x=>x.c)),o=order();
+    clip=L.map(x=>({dr:x.r-r0,dc:x.c-c0,v:S.value.cells[o[x.r]][x.c]}));clipN.value=clip.length;toast("Скопировано ячеек: "+clip.length)}
+  function pasteCells(){if(!clip||!sel.size)return;const o=order();
+    if(clip.length===1){const v=clip[0].v;selCells().forEach(x=>{S.value.cells[o[x.r]][x.c]=v})}
+    else{const L=selCells(),r0=Math.min(...L.map(x=>x.r)),c0=Math.min(...L.map(x=>x.c));
+      clip.forEach(p=>{const i=o[r0+p.dr],c=c0+p.dc;if(i!==undefined&&c<DAYS)S.value.cells[i][c]=p.v})}
+    touch();toast("Вставлено")}
+  function clearCells(){if(!sel.size)return;const o=order();selCells().forEach(x=>{S.value.cells[o[x.r]][x.c]=""});touch();toast("Очищено ячеек: "+sel.size)}
+  const pasteDay=ref(0),pasteText=ref("");
+  function parseGrid(t){const rows=t.replace(/\r/g,"").split("\n");while(rows.length&&rows[rows.length-1].trim()==="")rows.pop();
+    let g=rows.map(x=>x.split("\t").map(v=>v.trim().replace(",",".")));
+    const T=/^\d{1,2}:\d{2}$/;
+    if(g.length&&g[0].every(v=>v&&isNaN(+v)&&!T.test(v)))g.shift();
+    if(g.length&&g[0].length>1&&g.every(x=>T.test(x[0])))g=g.map(x=>x.slice(1));
+    return g}
+  function fillOrders(k0,h0,g){let n=0;g.forEach((row,dr)=>row.forEach((v,dc)=>{const k=k0+dc,h=h0+dr;if(k<DAYS&&h<24){O[k][h]=v;n++}}));saveO();return n}
+  function pasteColumn(){const g=parseGrid(pasteText.value);if(!g.length)return toast("Нет данных для вставки.",true);
+    const n=fillOrders(pasteDay.value,0,g);toast("Вставлено значений: "+n);pasteText.value=""}
+  function onPaste(k,h,e){const t=(e.clipboardData||window.clipboardData).getData("text");
+    if(!/[\n\t]/.test(t.trim()))return;
+    e.preventDefault();toast("Вставлено значений: "+fillOrders(k,h,parseGrid(t)))}
   const tel=p=>(p||"").replace(/[^\d+]/g,"");
   const touch=()=>{dirty.value=true;jset(KD,S.value)};
   const saveO=()=>jset(KO,O),saveG=()=>jset(KG,G);
   const addCourier=()=>{const s=S.value;s.names.push("Курьер "+(s.names.length+1));s.phones.push("");s.cats.push("m");s.cells.push(Array(DAYS).fill(""));tab.value=1;touch()};
-  const removeCourier=i=>{if(!confirm("Удалить курьера?"))return;const s=S.value;s.names.splice(i,1);s.phones.splice(i,1);s.cats.splice(i,1);s.cells.splice(i,1);touch()};
+  const removeCourier=i=>{if(!confirm("Удалить курьера?"))return;const s=S.value;s.names.splice(i,1);s.phones.splice(i,1);s.cats.splice(i,1);s.cells.splice(i,1);sel.clear();touch()};
   async function putFile(path,text,message){
     const api="https://api.github.com/repos/"+G.repo+"/contents/"+path,hd={Authorization:"Bearer "+G.token,Accept:"application/vnd.github+json"};
     let sha;const g=await fetch(api+"?ref="+encodeURIComponent(G.branch),{headers:hd});
@@ -250,6 +307,7 @@ createApp({template:document.getElementById("tpl").textContent,setup(){
   const logout=()=>sessionStorage.removeItem(KS);
   onMounted(async()=>{
     checkAuth();
+    window.addEventListener("mouseup",()=>{dragging=false});
     window.addEventListener("hashchange",()=>{admin.value=isAdm();tab.value=0;checkAuth()});
     let d=null;try{const r=await fetch("data/schedule.json?"+Date.now());if(r.ok)d=await r.json()}catch(e){}
     d=d||sample();
@@ -257,6 +315,6 @@ createApp({template:document.getElementById("tpl").textContent,setup(){
     d.phones=d.phones||[];while(d.phones.length<d.names.length)d.phones.push("");
     d.cats=d.cats||[];while(d.cats.length<d.names.length)d.cats.push(guess(d.cells[d.cats.length]));
     S.value=d});
-  return{dcl,auth,pw,pw2,editor,login,setup,checkAuth,logout,isFile,CATS,groups,S,O,G,admin,tab,tabs,cur,me,dirty,busy,msg,isErr,days,myShifts,L,ratio,heat,chipClass,tel,parse,touch,saveO,saveG,addCourier,removeCourier,publish};
+  return{pasteDay,pasteText,pasteColumn,onPaste,selMode,sel,clipN,isSel,cellDown,cellEnter,toggleCol,toggleRow,toggleSelMode,copyCells,pasteCells,clearCells,dcl,auth,pw,pw2,editor,login,setup,checkAuth,logout,isFile,CATS,groups,S,O,G,admin,tab,tabs,cur,me,dirty,busy,msg,isErr,days,myShifts,L,ratio,heat,chipClass,tel,parse,touch,saveO,saveG,addCourier,removeCourier,publish};
 }}).mount("#app");
 </script></body></html>
