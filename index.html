@@ -56,6 +56,8 @@ td.sel{background:rgba(91,108,255,.35)!important;box-shadow:inset 0 0 0 2px var(
 .heat{font-weight:600}.heat small{display:block;font-weight:400;color:var(--mut)}
 .two th:not(.sticky){position:static}.two th input{width:64px;border:1px solid var(--line);background:var(--bg);border-radius:6px;padding:3px 4px;text-align:center}
 .cnt{font-weight:600}
+.nm{width:140px;min-width:140px;max-width:140px}
+.nm.ed{width:280px;min-width:280px;max-width:280px}
 .fade-enter-active,.fade-leave-active{transition:opacity .2s,transform .2s}
 .fade-enter-from{opacity:0;transform:translateY(8px)}.fade-leave-to{opacity:0;transform:translateY(-8px)}
 .card-enter-from,.card-leave-to{opacity:0;transform:scale(.9)}.card-leave-active{position:absolute}
@@ -99,7 +101,8 @@ td.sel{background:rgba(91,108,255,.35)!important;box-shadow:inset 0 0 0 2px var(
   </nav>
   <section v-if="editor" class="card tools">
     <label>Начало: <input type="date" v-model="S.start" @change="touch"></label>
-    <label>Норма заказов/курьер в час: <input type="number" min="0.5" step="0.5" v-model.number="S.norm" style="width:70px" @change="touch"></label>
+    <label>Дней в графике: <input type="number" min="1" max="366" :value="nd" style="width:80px" @change="applyDays($event.target.value);$event.target.value=nd"></label>
+    <button @click="applyDays(nd+7)">+7 дней</button>
     <button @click="addCourier">+ Курьер</button>
     <button class="pub" :disabled="busy" @click="publish">{{busy?"Публикую…":"Опубликовать на GitHub"}}</button>
     <span v-if="dirty" class="dirty">Есть неопубликованные изменения</span>
@@ -122,12 +125,13 @@ td.sel{background:rgba(91,108,255,.35)!important;box-shadow:inset 0 0 0 2px var(
         <TransitionGroup v-if="me>=0" name="card" tag="div" class="my">
           <div v-for="s in myShifts" :key="s.k">{{s.label}}, {{s.wd}}<b>{{s.v}}</b></div>
         </TransitionGroup>
+        <div v-if="!vdays.length" class="hint">График закончился: все даты в прошлом. Добавьте дни или сдвиньте дату начала.</div>
         <div class="tw"><table>
-          <thead><tr><th class="sticky">Курьер</th><th>Телефон</th><th v-for="d in days" :key="d.k" :class="{we:d.we,fri:d.fri}">{{d.label}}<small>{{d.wd}}</small></th></tr></thead>
-          <tbody v-for="g in groups" :key="g.id" v-show="g.rows.length"><tr class="grp"><th :colspan="days.length+2">{{g.icon}} {{g.name}} <span>{{g.rows.length}}</span></th></tr><tr v-for="i in g.rows" :key="i" :class="{me:i===me}">
-            <td class="sticky name">{{S.names[i]}}</td>
+          <thead><tr><th class="sticky nm">Курьер</th><th>Телефон</th><th v-for="d in vdays" :key="d.k" :class="{we:d.we,fri:d.fri}">{{d.label}}<small>{{d.wd}}</small></th></tr></thead>
+          <tbody v-for="g in groups" :key="g.id" v-show="g.rows.length"><tr class="grp"><th :colspan="vdays.length+2">{{g.icon}} {{g.name}} <span>{{g.rows.length}}</span></th></tr><tr v-for="i in g.rows" :key="i" :class="{me:i===me}">
+            <td class="sticky name nm">{{S.names[i]}}</td>
             <td><a v-if="tel(S.phones[i])" :href="'tel:'+tel(S.phones[i])">{{S.phones[i]}}</a></td>
-            <td v-for="(v,k) in S.cells[i]" :key="k" :class="dcl(k)"><span v-if="v" class="chip" :class="chipClass(v)">{{v}}</span><span v-else class="off">вых</span></td>
+            <td v-for="d in vdays" :key="d.k" :class="dcl(d.k)"><span v-if="!S.cells[i][d.k]" class="off">вых</span><span v-else-if="!ended(d.k,S.cells[i][d.k])" class="chip" :class="chipClass(S.cells[i][d.k])">{{S.cells[i][d.k]}}</span></td>
           </tr></tbody>
         </table></div>
       </template>
@@ -144,12 +148,12 @@ td.sel{background:rgba(91,108,255,.35)!important;box-shadow:inset 0 0 0 2px var(
           </template>
         </div>
         <div class="tw" :class="{selmode:selMode}"><table>
-          <thead><tr><th class="sticky">Курьер</th><th>Категория</th><th>Телефон</th><th v-for="d in days" :key="d.k" :class="{we:d.we,fri:d.fri,clk:selMode}" @click="selMode&&toggleCol(d.k)">{{d.label}}<small>{{d.wd}}</small></th><th></th></tr></thead>
-          <tbody v-for="g in groups" :key="g.id" v-show="g.rows.length"><tr class="grp"><th :colspan="days.length+4">{{g.icon}} {{g.name}} <span>{{g.rows.length}}</span></th></tr><tr v-for="i in g.rows" :key="i">
-            <td class="sticky name" :class="{clk:selMode}" @click="selMode&&toggleRow(i)"><input v-if="!selMode" v-model="S.names[i]" @change="touch"><span v-else class="cv">{{S.names[i]}}</span></td>
+          <thead><tr><th class="sticky nm ed">Курьер</th><th>Категория</th><th>Телефон</th><th v-for="d in vdays" :key="d.k" :class="{we:d.we,fri:d.fri,clk:selMode}" @click="selMode&&toggleCol(d.k)">{{d.label}}<small>{{d.wd}}</small></th><th></th></tr></thead>
+          <tbody v-for="g in groups" :key="g.id" v-show="g.rows.length"><tr class="grp"><th :colspan="vdays.length+4">{{g.icon}} {{g.name}} <span>{{g.rows.length}}</span></th></tr><tr v-for="i in g.rows" :key="i">
+            <td class="sticky name nm ed" :class="{clk:selMode}" @click="selMode&&toggleRow(i)"><input v-if="!selMode" v-model="S.names[i]" @change="touch"><span v-else class="cv">{{S.names[i]}}</span></td>
             <td><select v-model="S.cats[i]" @change="touch"><option v-for="c in CATS" :key="c.id" :value="c.id">{{c.name}}</option></select></td>
             <td><input type="tel" v-model.trim="S.phones[i]" style="min-width:130px" @change="touch"></td>
-            <td v-for="(v,k) in S.cells[i]" :key="k" :class="[dcl(k),{bad:v&&!parse(v),sel:selMode&&isSel(i,k)}]" @mousedown="cellDown(i,k,$event)" @mouseenter="cellEnter(i,k)"><input v-if="!selMode" v-model.trim="S.cells[i][k]" @change="touch"><span v-else class="cv">{{v}}</span></td>
+            <td v-for="d in vdays" :key="d.k" :class="[dcl(d.k),{bad:S.cells[i][d.k]&&!parse(S.cells[i][d.k]),sel:selMode&&isSel(i,d.k)}]" @mousedown="cellDown(i,d.k,$event)" @mouseenter="cellEnter(i,d.k)"><input v-if="!selMode" v-model.trim="S.cells[i][d.k]" @change="touch"><span v-else class="cv">{{S.cells[i][d.k]}}</span></td>
             <td><button class="x" @click="removeCourier(i)">✕</button></td>
           </tr></tbody>
         </table></div>
@@ -168,7 +172,7 @@ td.sel{background:rgba(91,108,255,.35)!important;box-shadow:inset 0 0 0 2px var(
           <thead><tr><th class="sticky">Час</th><th v-for="d in days" :key="d.k" :class="{we:d.we,fri:d.fri}">{{d.label}}<small>{{d.wd}}</small></th></tr></thead>
           <tbody><tr v-for="h in 24" :key="h">
             <th class="sticky">{{String(h-1).padStart(2,"0")}}:00</th>
-            <td v-for="k in 14" :key="k" :class="dcl(k-1)"><input inputmode="numeric" v-model.trim="O[k-1][h-1]" @change="saveO" @paste="onPaste(k-1,h-1,$event)"></td>
+            <td v-for="k in nd" :key="k" :class="dcl(k-1)"><input inputmode="numeric" v-model.trim="O[k-1][h-1]" @change="saveO" @paste="onPaste(k-1,h-1,$event)"></td>
           </tr></tbody>
         </table></div>
         <div class="hint">Заказы хранятся только в этом браузере и в репозиторий не попадают.</div>
@@ -187,13 +191,13 @@ td.sel{background:rgba(91,108,255,.35)!important;box-shadow:inset 0 0 0 2px var(
           </thead>
           <tbody><tr v-for="h in 24" :key="h">
             <th class="sticky">{{String(h-1).padStart(2,"0")}}:00</th>
-            <template v-for="k in 14" :key="k">
+            <template v-for="k in nd" :key="k">
               <td class="cnt" :class="dcl(k-1)">{{L[k-1][h-1]}}</td>
               <td class="heat" :class="dcl(k-1)" :style="heat(k-1,h-1)">{{ratio(k-1,h-1)}}<small>{{planTxt(k-1,h-1)}} зак.</small></td>
             </template>
           </tr></tbody>
         </table></div>
-        <div class="hint">В каждом дне два столбца: число курьеров на линии и заказов на одного курьера (с учётом прироста). Под числом — ожидаемое число заказов. Красным — выше нормы, ∞ — заказы есть, курьеров нет.</div>
+        <div class="hint">В каждом дне два столбца: число курьеров на линии и заказов на одного курьера (с учётом прироста). Под числом — ожидаемое число заказов. Цвет ячейки: меньше 3 заказов на курьера — без цвета, от 3 — жёлтый, от 4 — оранжевый, от 5 — красный (∞ — заказы есть, курьеров нет).</div>
       </template>
     </div>
   </Transition>
@@ -212,7 +216,7 @@ const jset=(k,v)=>{try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}};
 function guess(row){const p=row.map(parse).filter(Boolean);if(!p.length)return"m";if(p.some(x=>x[0]>x[1]))return"n";return p[0][0]<14?"m":"e"}
 function parse(v){const m=/^\s*(\d{1,2})\s*[-–—]\s*(\d{1,2})\s*$/.exec(v||"");if(!m)return null;const a=+m[1],b=+m[2];return a>24||b>24||a===b?null:[a,b]}
 createApp({template:document.getElementById("tpl").textContent,setup(){
-  const S=ref(null),O=reactive(jget(KO,blank())),G=reactive(Object.assign({repo:"",branch:"main",token:""},jget(KG,{})));
+  const nd=ref(DAYS),S=ref(null),O=reactive(jget(KO,blank())),G=reactive(Object.assign({repo:"",branch:"main",token:""},jget(KG,{})));
   const isFile=location.protocol==="file:",isAdm=()=>isFile||location.hash==="#/admin",admin=ref(isAdm()),tab=ref(0),me=ref(-1),dirty=ref(false),busy=ref(false),msg=ref(""),isErr=ref(false);
   let timer;
   const toast=(t,err=false,keep=false)=>{msg.value=t;isErr.value=err;clearTimeout(timer);if(!keep)timer=setTimeout(()=>msg.value="",6000)};
@@ -220,13 +224,17 @@ createApp({template:document.getElementById("tpl").textContent,setup(){
   const auth=ref("checking"),pw=ref(""),pw2=ref(""),KS="courier-auth-ok";
   const editor=computed(()=>admin.value&&(isFile||auth.value==="ok"));
   const cur=computed(()=>editor.value?tab.value:0);
-  const days=computed(()=>S.value?Array.from({length:DAYS},(_,k)=>{const d=new Date(S.value.start+"T12:00:00");d.setDate(d.getDate()+k);
+  const days=computed(()=>S.value?Array.from({length:nd.value},(_,k)=>{const d=new Date(S.value.start+"T12:00:00");d.setDate(d.getDate()+k);
     return{k,label:String(d.getDate()).padStart(2,"0")+"."+String(d.getMonth()+1).padStart(2,"0"),wd:WD[d.getDay()],we:d.getDay()%6===0,fri:d.getDay()===5}}):[]);
-  const myShifts=computed(()=>me.value<0?[]:S.value.cells[me.value].map((v,k)=>v?{k,v,label:days.value[k].label,wd:days.value[k].wd}:null).filter(Boolean));
-  const L=computed(()=>{const a=Array.from({length:DAYS+1},()=>Array(24).fill(0));
+  const now=ref(new Date());
+  const todayIdx=computed(()=>{if(!S.value)return 0;const t=new Date(now.value);t.setHours(12,0,0,0);return Math.round((t-new Date(S.value.start+"T12:00:00"))/864e5)});
+  const ended=(k,v)=>{const p=parse(v);if(!p)return false;const d=new Date(S.value.start+"T00:00:00");d.setDate(d.getDate()+k+(p[0]<p[1]?0:1));d.setHours(p[1],0,0,0);return now.value>=d};
+  const vdays=computed(()=>days.value.filter(d=>d.k>=todayIdx.value||S.value.cells.some(r=>r[d.k]&&!ended(d.k,r[d.k]))));
+  const myShifts=computed(()=>me.value<0?[]:S.value.cells[me.value].map((v,k)=>v&&!ended(k,v)?{k,v,label:days.value[k].label,wd:days.value[k].wd}:null).filter(Boolean));
+  const L=computed(()=>{const a=Array.from({length:nd.value+1},()=>Array(24).fill(0));
     S.value.cells.forEach(r=>r.forEach((v,k)=>{const p=parse(v);if(!p)return;const[x,y]=p;
       if(x<y){for(let h=x;h<y;h++)a[k][h%24]++}else{for(let h=x;h<24;h++)a[k][h]++;for(let h=0;h<y;h++)a[k+1][h]++}}));
-    return a.slice(0,DAYS)});
+    return a.slice(0,nd.value)});
   const KGR="courier-growth-v1",gr=reactive(Object.assign({all:0,days:[]},jget(KGR,{})));
   while(gr.days.length<DAYS)gr.days.push("");
   const saveGr=()=>jset(KGR,gr);
@@ -235,10 +243,17 @@ createApp({template:document.getElementById("tpl").textContent,setup(){
   const planTxt=(k,h)=>+plan(k,h).toFixed(1);
   const q=(k,h)=>{const c=L.value[k][h],o=plan(k,h);return c?o/c:(o?Infinity:0)};
   const ratio=(k,h)=>{const v=q(k,h);return v===Infinity?"∞":(v?+v.toFixed(1):"–")};
-  const heat=(k,h)=>{const v=q(k,h),n=S.value.norm||3;if(!v)return{};
-    return v>n?{background:"rgba(239,68,68,.45)"}:{background:`color-mix(in srgb,var(--acc) ${Math.round(Math.min(.85,v/n*.5)*100)}%,transparent)`}};
+  const heat=(k,h)=>{const v=q(k,h);
+    if(v>=5)return{background:"rgba(239,68,68,.5)"};
+    if(v>=4)return{background:"rgba(249,115,22,.5)"};
+    if(v>=3)return{background:"rgba(250,204,21,.5)"};
+    return{}};
   const chipClass=v=>{const p=parse(v);return p?(p[0]>p[1]?"n":"d"):"o"};
   const groups=computed(()=>CATS.map(c=>Object.assign({rows:S.value.names.map((_,i)=>i).filter(i=>S.value.cats[i]===c.id)},c)));
+  function ensureDays(n){while(O.length<n)O.push(Array(24).fill(""));while(gr.days.length<n)gr.days.push("")}
+  function applyDays(n){n=Math.max(1,Math.min(366,Math.floor(+n)||nd.value));
+    if(n<nd.value&&S.value.cells.some(r=>r.slice(n).some(v=>v))&&!confirm("В удаляемых днях есть смены. Удалить?"))return;
+    S.value.cells.forEach(r=>{while(r.length<n)r.push("");r.length=n});nd.value=n;ensureDays(n);sel.clear();touch()}
   const dcl=k=>{const d=days.value[k];return{we:d.we,fri:d.fri}};
   const selMode=ref(false),sel=reactive(new Set());let anchor=null,dragging=false,dragAdd=true;
   const key=(i,k)=>i+":"+k,isSel=(i,k)=>sel.has(key(i,k)),order=()=>groups.value.flatMap(g=>g.rows);
@@ -260,7 +275,7 @@ createApp({template:document.getElementById("tpl").textContent,setup(){
   function pasteCells(){if(!clip||!sel.size)return;const o=order();
     if(clip.length===1){const v=clip[0].v;selCells().forEach(x=>{S.value.cells[o[x.r]][x.c]=v})}
     else{const L=selCells(),r0=Math.min(...L.map(x=>x.r)),c0=Math.min(...L.map(x=>x.c));
-      clip.forEach(p=>{const i=o[r0+p.dr],c=c0+p.dc;if(i!==undefined&&c<DAYS)S.value.cells[i][c]=p.v})}
+      clip.forEach(p=>{const i=o[r0+p.dr],c=c0+p.dc;if(i!==undefined&&c<nd.value)S.value.cells[i][c]=p.v})}
     touch();toast("Вставлено")}
   function clearCells(){if(!sel.size)return;const o=order();selCells().forEach(x=>{S.value.cells[o[x.r]][x.c]=""});touch();toast("Очищено ячеек: "+sel.size)}
   const pasteDay=ref(0),pasteText=ref("");
@@ -270,7 +285,7 @@ createApp({template:document.getElementById("tpl").textContent,setup(){
     if(g.length&&g[0].every(v=>v&&isNaN(+v)&&!T.test(v)))g.shift();
     if(g.length&&g[0].length>1&&g.every(x=>T.test(x[0])))g=g.map(x=>x.slice(1));
     return g}
-  function fillOrders(k0,h0,g){let n=0;g.forEach((row,dr)=>row.forEach((v,dc)=>{const k=k0+dc,h=h0+dr;if(k<DAYS&&h<24){O[k][h]=v;n++}}));saveO();return n}
+  function fillOrders(k0,h0,g){let n=0;g.forEach((row,dr)=>row.forEach((v,dc)=>{const k=k0+dc,h=h0+dr;if(k<nd.value&&h<24){O[k][h]=v;n++}}));saveO();return n}
   function pasteColumn(){const g=parseGrid(pasteText.value);if(!g.length)return toast("Нет данных для вставки.",true);
     const n=fillOrders(pasteDay.value,0,g);toast("Вставлено значений: "+n);pasteText.value=""}
   function onPaste(k,h,e){const t=(e.clipboardData||window.clipboardData).getData("text");
@@ -279,7 +294,7 @@ createApp({template:document.getElementById("tpl").textContent,setup(){
   const tel=p=>(p||"").replace(/[^\d+]/g,"");
   const touch=()=>{dirty.value=true;jset(KD,S.value)};
   const saveO=()=>jset(KO,O),saveG=()=>jset(KG,G);
-  const addCourier=()=>{const s=S.value;s.names.push("Курьер "+(s.names.length+1));s.phones.push("");s.cats.push("m");s.cells.push(Array(DAYS).fill(""));tab.value=1;touch()};
+  const addCourier=()=>{const s=S.value;s.names.push("Курьер "+(s.names.length+1));s.phones.push("");s.cats.push("m");s.cells.push(Array(nd.value).fill(""));tab.value=1;touch()};
   const removeCourier=i=>{if(!confirm("Удалить курьера?"))return;const s=S.value;s.names.splice(i,1);s.phones.splice(i,1);s.cats.splice(i,1);s.cells.splice(i,1);sel.clear();touch()};
   async function putFile(path,text,message){
     const api="https://api.github.com/repos/"+G.repo+"/contents/"+path,hd={Authorization:"Bearer "+G.token,Accept:"application/vnd.github+json"};
@@ -326,6 +341,7 @@ createApp({template:document.getElementById("tpl").textContent,setup(){
   const logout=()=>sessionStorage.removeItem(KS);
   onMounted(async()=>{
     checkAuth();
+    setInterval(()=>{now.value=new Date()},60000);
     window.addEventListener("mouseup",()=>{dragging=false});
     window.addEventListener("hashchange",()=>{admin.value=isAdm();tab.value=0;checkAuth()});
     let d=null;try{const r=await fetch("data/schedule.json?"+Date.now());if(r.ok)d=await r.json()}catch(e){}
@@ -333,7 +349,8 @@ createApp({template:document.getElementById("tpl").textContent,setup(){
     if(admin.value){const dr=jget(KD,null);if(dr&&dr.cells){d=dr;dirty.value=true;toast("Загружен несохранённый черновик.")}}
     d.phones=d.phones||[];while(d.phones.length<d.names.length)d.phones.push("");
     d.cats=d.cats||[];while(d.cats.length<d.names.length)d.cats.push(guess(d.cells[d.cats.length]));
+    const n=d.cells.length?Math.max(1,...d.cells.map(x=>x.length)):DAYS;d.cells.forEach(x=>{while(x.length<n)x.push("")});nd.value=n;ensureDays(n);
     S.value=d});
-  return{gr,saveGr,planTxt,pasteDay,pasteText,pasteColumn,onPaste,selMode,sel,clipN,isSel,cellDown,cellEnter,toggleCol,toggleRow,toggleSelMode,copyCells,pasteCells,clearCells,dcl,auth,pw,pw2,editor,login,setup,checkAuth,logout,isFile,CATS,groups,S,O,G,admin,tab,tabs,cur,me,dirty,busy,msg,isErr,days,myShifts,L,ratio,heat,chipClass,tel,parse,touch,saveO,saveG,addCourier,removeCourier,publish};
+  return{vdays,ended,nd,applyDays,gr,saveGr,planTxt,pasteDay,pasteText,pasteColumn,onPaste,selMode,sel,clipN,isSel,cellDown,cellEnter,toggleCol,toggleRow,toggleSelMode,copyCells,pasteCells,clearCells,dcl,auth,pw,pw2,editor,login,setup,checkAuth,logout,isFile,CATS,groups,S,O,G,admin,tab,tabs,cur,me,dirty,busy,msg,isErr,days,myShifts,L,ratio,heat,chipClass,tel,parse,touch,saveO,saveG,addCourier,removeCourier,publish};
 }}).mount("#app");
 </script></body></html>
