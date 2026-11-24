@@ -54,6 +54,8 @@ td.sel{background:rgba(91,108,255,.35)!important;box-shadow:inset 0 0 0 2px var(
 .my b{display:block;font-size:17px}
 .hint{color:var(--mut);font-size:13px;margin-top:8px}
 .heat{font-weight:600}.heat small{display:block;font-weight:400;color:var(--mut)}
+.two th:not(.sticky){position:static}.two th input{width:64px;border:1px solid var(--line);background:var(--bg);border-radius:6px;padding:3px 4px;text-align:center}
+.cnt{font-weight:600}
 .fade-enter-active,.fade-leave-active{transition:opacity .2s,transform .2s}
 .fade-enter-from{opacity:0;transform:translateY(8px)}.fade-leave-to{opacity:0;transform:translateY(-8px)}
 .card-enter-from,.card-leave-to{opacity:0;transform:scale(.9)}.card-leave-active{position:absolute}
@@ -173,14 +175,25 @@ td.sel{background:rgba(91,108,255,.35)!important;box-shadow:inset 0 0 0 2px var(
       </template>
 
       <template v-else>
-        <div class="tw"><table>
-          <thead><tr><th class="sticky">Час</th><th v-for="d in days" :key="d.k" :class="{we:d.we,fri:d.fri}">{{d.label}}<small>{{d.wd}}</small></th></tr></thead>
+        <div class="card selbar">
+          <label>Общий прирост заказов, %: <input type="number" step="1" v-model.number="gr.all" @change="saveGr" style="width:80px"></label>
+          <span class="hint" style="margin:0;flex:1;min-width:220px">Заказы берутся из вкладки «Заказы по часам» и умножаются на (1 + прирост/100). Например, было 200, прирост 10% — считаем 220. Для отдельного дня впишите свой процент в строке «Прирост, %» ниже.</span>
+        </div>
+        <div class="tw"><table class="two">
+          <thead>
+            <tr><th class="sticky" rowspan="2">Час</th><th v-for="d in days" :key="d.k" colspan="2" :class="{we:d.we,fri:d.fri}">{{d.label}}<small>{{d.wd}}</small></th></tr>
+            <tr><template v-for="d in days" :key="d.k"><th :class="{we:d.we,fri:d.fri}"><small>Курьеров</small></th><th :class="{we:d.we,fri:d.fri}"><small>Заказов на курьера</small></th></template></tr>
+            <tr><th class="sticky">Прирост, %</th><th v-for="d in days" :key="d.k" colspan="2" :class="{we:d.we,fri:d.fri}"><input type="number" step="1" v-model="gr.days[d.k]" :placeholder="gr.all||0" @change="saveGr"></th></tr>
+          </thead>
           <tbody><tr v-for="h in 24" :key="h">
             <th class="sticky">{{String(h-1).padStart(2,"0")}}:00</th>
-            <td v-for="k in 14" :key="k" class="heat" :class="dcl(k-1)" :style="heat(k-1,h-1)">{{ratio(k-1,h-1)}}<small>{{O[k-1][h-1]||0}}/{{L[k-1][h-1]}}</small></td>
+            <template v-for="k in 14" :key="k">
+              <td class="cnt" :class="dcl(k-1)">{{L[k-1][h-1]}}</td>
+              <td class="heat" :class="dcl(k-1)" :style="heat(k-1,h-1)">{{ratio(k-1,h-1)}}<small>{{planTxt(k-1,h-1)}} зак.</small></td>
+            </template>
           </tr></tbody>
         </table></div>
-        <div class="hint">Сверху: заказов на курьера; ниже: заказы/курьеры на линии. Красным — выше нормы, ∞ — заказы есть, курьеров нет.</div>
+        <div class="hint">В каждом дне два столбца: число курьеров на линии и заказов на одного курьера (с учётом прироста). Под числом — ожидаемое число заказов. Красным — выше нормы, ∞ — заказы есть, курьеров нет.</div>
       </template>
     </div>
   </Transition>
@@ -214,7 +227,13 @@ createApp({template:document.getElementById("tpl").textContent,setup(){
     S.value.cells.forEach(r=>r.forEach((v,k)=>{const p=parse(v);if(!p)return;const[x,y]=p;
       if(x<y){for(let h=x;h<y;h++)a[k][h%24]++}else{for(let h=x;h<24;h++)a[k][h]++;for(let h=0;h<y;h++)a[k+1][h]++}}));
     return a.slice(0,DAYS)});
-  const q=(k,h)=>{const c=L.value[k][h],o=+O[k][h]||0;return c?o/c:(o?Infinity:0)};
+  const KGR="courier-growth-v1",gr=reactive(Object.assign({all:0,days:[]},jget(KGR,{})));
+  while(gr.days.length<DAYS)gr.days.push("");
+  const saveGr=()=>jset(KGR,gr);
+  const gOf=k=>{const v=gr.days[k];return(v===""||v==null||isNaN(+v))?(+gr.all||0):+v};
+  const plan=(k,h)=>(+O[k][h]||0)*(1+gOf(k)/100);
+  const planTxt=(k,h)=>+plan(k,h).toFixed(1);
+  const q=(k,h)=>{const c=L.value[k][h],o=plan(k,h);return c?o/c:(o?Infinity:0)};
   const ratio=(k,h)=>{const v=q(k,h);return v===Infinity?"∞":(v?+v.toFixed(1):"–")};
   const heat=(k,h)=>{const v=q(k,h),n=S.value.norm||3;if(!v)return{};
     return v>n?{background:"rgba(239,68,68,.45)"}:{background:`color-mix(in srgb,var(--acc) ${Math.round(Math.min(.85,v/n*.5)*100)}%,transparent)`}};
@@ -315,6 +334,6 @@ createApp({template:document.getElementById("tpl").textContent,setup(){
     d.phones=d.phones||[];while(d.phones.length<d.names.length)d.phones.push("");
     d.cats=d.cats||[];while(d.cats.length<d.names.length)d.cats.push(guess(d.cells[d.cats.length]));
     S.value=d});
-  return{pasteDay,pasteText,pasteColumn,onPaste,selMode,sel,clipN,isSel,cellDown,cellEnter,toggleCol,toggleRow,toggleSelMode,copyCells,pasteCells,clearCells,dcl,auth,pw,pw2,editor,login,setup,checkAuth,logout,isFile,CATS,groups,S,O,G,admin,tab,tabs,cur,me,dirty,busy,msg,isErr,days,myShifts,L,ratio,heat,chipClass,tel,parse,touch,saveO,saveG,addCourier,removeCourier,publish};
+  return{gr,saveGr,planTxt,pasteDay,pasteText,pasteColumn,onPaste,selMode,sel,clipN,isSel,cellDown,cellEnter,toggleCol,toggleRow,toggleSelMode,copyCells,pasteCells,clearCells,dcl,auth,pw,pw2,editor,login,setup,checkAuth,logout,isFile,CATS,groups,S,O,G,admin,tab,tabs,cur,me,dirty,busy,msg,isErr,days,myShifts,L,ratio,heat,chipClass,tel,parse,touch,saveO,saveG,addCourier,removeCourier,publish};
 }}).mount("#app");
 </script></body></html>
