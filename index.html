@@ -1,7 +1,7 @@
 <!DOCTYPE html><html lang="ru"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"><title>График курьеров</title><style>
-:root{--bg:#f4f5fb;--fg:#1b1d2a;--mut:#6c7090;--card:#fff;--line:#e4e6f2;--acc:#5b6cff;--acc2:#8b5bff;--day:#fff3d6;--dayf:#8a5a00;--ngt:#e7e4ff;--ngf:#4a3bb5;--bad:239,68,68;
+:root{--bg:#f4f5fb;--fg:#1b1d2a;--mut:#6c7090;--card:#fff;--line:#e4e6f2;--acc:#5b6cff;--acc2:#8b5bff;--day:#f1ecd9;--dayf:#6a5d36;--ngt:#e6e9f4;--ngf:#4f5b8a;--bad:239,68,68;
 box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
-@media(prefers-color-scheme:dark){:root{--bg:#10111a;--fg:#ececf5;--mut:#9a9cba;--card:#1a1c2a;--line:#2b2e44;--acc:#7d8bff;--acc2:#a07dff;--day:#4a3a12;--dayf:#ffd78a;--ngt:#2d2a5c;--ngf:#c9c2ff}}
+@media(prefers-color-scheme:dark){:root{--bg:#10111a;--fg:#ececf5;--mut:#9a9cba;--card:#1a1c2a;--line:#2b2e44;--acc:#7d8bff;--acc2:#a07dff;--day:#3a3626;--dayf:#d9cfa6;--ngt:#2a2f45;--ngf:#aeb7e0}}
 *{box-sizing:border-box}
 html{scroll-padding-top:env(safe-area-inset-top,0px)}
 body{margin:0;background:var(--bg);color:var(--fg);font:15px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
@@ -34,8 +34,9 @@ tbody tr:hover td{background:rgba(125,139,255,.08)}
 tr.me td{background:rgba(125,139,255,.2)!important}
 @keyframes rowin{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
 tr.grp th{position:static;text-align:left;padding:8px 12px;font-size:13px;background:linear-gradient(90deg,rgba(125,139,255,.2),transparent)}
-.grp span{background:var(--acc);color:#fff;border-radius:99px;padding:0 8px;font-size:11px;margin-left:6px}
-.chip{display:inline-block;min-width:50px;text-align:center;padding:2px 8px;border-radius:99px;font-size:12px;font-weight:600}
+.gt{position:sticky;left:12px;display:inline-block}
+.grp .cn{background:var(--acc);color:#fff;border-radius:99px;padding:0 8px;font-size:11px;margin-left:6px}
+.chip{display:inline-block;min-width:50px;text-align:center;padding:2px 8px;border-radius:99px;font-size:12px;font-weight:500}
 .chip.d{background:var(--day);color:var(--dayf)}.chip.n{background:var(--ngt);color:var(--ngf)}.chip.o{background:rgba(var(--bad),.2)}
 .off{color:var(--mut);font-size:12px}
 td input{width:100%;border:0;background:transparent;padding:8px 4px;text-align:center}
@@ -134,7 +135,7 @@ tr.me td.sticky{background:linear-gradient(rgba(125,139,255,.2),rgba(125,139,255
         <div v-if="!vdays.length" class="hint">График закончился: все даты в прошлом. Добавьте дни или сдвиньте дату начала.</div>
         <div class="tw"><table>
           <thead><tr><th class="sticky nm">Курьер</th><th>Телефон</th><th v-for="d in vdays" :key="d.k" :class="{we:d.we,fri:d.fri}">{{d.label}}<small>{{d.wd}}</small></th></tr></thead>
-          <tbody v-for="g in groups" :key="g.id" v-show="g.rows.length"><tr class="grp"><th :colspan="vdays.length+2">{{g.icon}} {{g.name}} <span>{{g.rows.length}}</span></th></tr><tr v-for="i in g.rows" :key="i" :class="{me:i===me}">
+          <tbody v-for="g in groups" :key="g.id" v-show="g.rows.length"><tr class="grp"><th :colspan="vdays.length+2"><span class="gt">{{g.icon}} {{g.name}} <span class="cn">{{g.rows.length}}</span></span></th></tr><tr v-for="i in g.rows" :key="i" :class="{me:i===me}">
             <td class="sticky name nm" :class="{clk:S.comments[i]}" @click="S.comments[i]&&(popup=i)">{{S.names[i]}}<span v-if="S.comments[i]"> 💬</span></td>
             <td><a v-if="tel(S.phones[i])" :href="'tel:'+tel(S.phones[i])">{{S.phones[i]}}</a></td>
             <td v-for="d in vdays" :key="d.k" :class="dcl(d.k)"><span v-if="!S.cells[i][d.k]" class="off">вых</span><span v-else-if="!ended(d.k,S.cells[i][d.k])" class="chip" :class="chipClass(S.cells[i][d.k])">{{S.cells[i][d.k]}}</span></td>
@@ -155,7 +156,7 @@ tr.me td.sticky{background:linear-gradient(rgba(125,139,255,.2),rgba(125,139,255
         </div>
         <div class="tw" :class="{selmode:selMode}"><table>
           <thead><tr><th class="sticky nm ed">Курьер</th><th>Категория</th><th>Телефон</th><th>Комментарий</th><th v-for="d in vdays" :key="d.k" :class="{we:d.we,fri:d.fri,clk:selMode}" @click="selMode&&toggleCol(d.k)">{{d.label}}<small>{{d.wd}}</small></th><th></th></tr></thead>
-          <tbody v-for="g in groups" :key="g.id" v-show="g.rows.length"><tr class="grp"><th :colspan="vdays.length+5">{{g.icon}} {{g.name}} <span>{{g.rows.length}}</span></th></tr><tr v-for="i in g.rows" :key="i">
+          <tbody v-for="g in groups" :key="g.id" v-show="g.rows.length"><tr class="grp"><th :colspan="vdays.length+5"><span class="gt">{{g.icon}} {{g.name}} <span class="cn">{{g.rows.length}}</span></span></th></tr><tr v-for="i in g.rows" :key="i">
             <td class="sticky name nm ed" :class="{clk:selMode}" @click="selMode&&toggleRow(i)"><input v-if="!selMode" v-model="S.names[i]" @change="touch"><span v-else class="cv">{{S.names[i]}}</span></td>
             <td><select v-model="S.cats[i]" @change="touch"><option v-for="c in CATS" :key="c.id" :value="c.id">{{c.name}}</option></select></td>
             <td><input type="tel" v-model.trim="S.phones[i]" style="min-width:130px" @change="touch"></td>
