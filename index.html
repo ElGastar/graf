@@ -58,6 +58,9 @@ td.sel{background:rgba(91,108,255,.35)!important;box-shadow:inset 0 0 0 2px var(
 .cnt{font-weight:600}
 tbody tr:hover td.sticky{background:linear-gradient(rgba(125,139,255,.08),rgba(125,139,255,.08)),var(--card)}
 tr.me td.sticky{background:linear-gradient(rgba(125,139,255,.2),rgba(125,139,255,.2)),var(--card)!important}
+.modal{position:fixed;inset:0;background:rgba(0,0,0,.45);display:flex;align-items:center;justify-content:center;z-index:20;padding:16px}
+.mbox{background:var(--card);border-radius:16px;padding:18px;max-width:420px;width:100%;display:flex;flex-direction:column;gap:10px;box-shadow:0 20px 50px rgba(0,0,0,.35)}
+.mbox textarea{border:1px solid var(--line);background:var(--bg);color:var(--fg);border-radius:10px;padding:8px 10px;font:inherit;resize:vertical}
 .nm{width:140px;min-width:140px;max-width:140px}
 .nm.ed{width:280px;min-width:280px;max-width:280px}
 .fade-enter-active,.fade-leave-active{transition:opacity .2s,transform .2s}
@@ -131,7 +134,7 @@ tr.me td.sticky{background:linear-gradient(rgba(125,139,255,.2),rgba(125,139,255
         <div class="tw"><table>
           <thead><tr><th class="sticky nm">Курьер</th><th>Телефон</th><th v-for="d in vdays" :key="d.k" :class="{we:d.we,fri:d.fri}">{{d.label}}<small>{{d.wd}}</small></th></tr></thead>
           <tbody v-for="g in groups" :key="g.id" v-show="g.rows.length"><tr class="grp"><th :colspan="vdays.length+2">{{g.icon}} {{g.name}} <span>{{g.rows.length}}</span></th></tr><tr v-for="i in g.rows" :key="i" :class="{me:i===me}">
-            <td class="sticky name nm">{{S.names[i]}}<span v-if="editor&&CM[i]" :title="CM[i]"> 💬</span></td>
+            <td class="sticky name nm" :class="{clk:editor}" @click="editor&&(popup=i)">{{S.names[i]}}<span v-if="editor&&CM[i]"> 💬</span></td>
             <td><a v-if="tel(S.phones[i])" :href="'tel:'+tel(S.phones[i])">{{S.phones[i]}}</a></td>
             <td v-for="d in vdays" :key="d.k" :class="dcl(d.k)"><span v-if="!S.cells[i][d.k]" class="off">вых</span><span v-else-if="!ended(d.k,S.cells[i][d.k])" class="chip" :class="chipClass(S.cells[i][d.k])">{{S.cells[i][d.k]}}</span></td>
           </tr></tbody>
@@ -205,6 +208,16 @@ tr.me td.sticky{background:linear-gradient(rgba(125,139,255,.2),rgba(125,139,255
     </div>
   </Transition>
   <footer class="foot"><a v-if="!admin" href="#/admin">Редактор</a><a v-else-if="!isFile" href="#/" @click="logout">Выйти из редактора</a></footer>
+  <Transition name="fade">
+    <div v-if="popup!==null&&S.names[popup]!==undefined" class="modal" @click.self="popup=null">
+      <div class="mbox">
+        <b>{{S.names[popup]}}</b>
+        <div v-if="S.phones[popup]" class="hint" style="margin:0">{{S.phones[popup]}}</div>
+        <textarea v-model="CM[popup]" @change="saveC" rows="5" placeholder="Комментарий к курьеру"></textarea>
+        <button class="pub" @click="popup=null">Закрыть</button>
+      </div>
+    </div>
+  </Transition>
 </div>
 <Transition name="toast"><div v-if="msg" class="toast" :class="{err:isErr}">{{msg}}</div></Transition>
 </script><script src="https://cdn.jsdelivr.net/npm/vue@3.5.13/dist/vue.global.prod.js"></script><script>
@@ -219,7 +232,7 @@ const jset=(k,v)=>{try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}};
 function guess(row){const p=row.map(parse).filter(Boolean);if(!p.length)return"m";if(p.some(x=>x[0]>x[1]))return"n";return p[0][0]<14?"m":"e"}
 function parse(v){const m=/^\s*(\d{1,2})\s*[-–—]\s*(\d{1,2})\s*$/.exec(v||"");if(!m)return null;const a=+m[1],b=+m[2];return a>24||b>24||a===b?null:[a,b]}
 createApp({template:document.getElementById("tpl").textContent,setup(){
-  const KC="courier-comments-v1",CM=reactive(jget(KC,[])),nd=ref(DAYS),S=ref(null),O=reactive(jget(KO,blank())),G=reactive(Object.assign({repo:"",branch:"main",token:""},jget(KG,{})));
+  const popup=ref(null),KC="courier-comments-v1",CM=reactive(jget(KC,[])),nd=ref(DAYS),S=ref(null),O=reactive(jget(KO,blank())),G=reactive(Object.assign({repo:"",branch:"main",token:""},jget(KG,{})));
   const isFile=location.protocol==="file:",isAdm=()=>isFile||location.hash==="#/admin",admin=ref(isAdm()),tab=ref(0),me=ref(-1),dirty=ref(false),busy=ref(false),msg=ref(""),isErr=ref(false);
   let timer;
   const toast=(t,err=false,keep=false)=>{msg.value=t;isErr.value=err;clearTimeout(timer);if(!keep)timer=setTimeout(()=>msg.value="",6000)};
@@ -299,7 +312,7 @@ createApp({template:document.getElementById("tpl").textContent,setup(){
   const saveC=()=>jset(KC,CM);
   const saveO=()=>jset(KO,O),saveG=()=>jset(KG,G);
   const addCourier=()=>{const s=S.value;s.names.push("Курьер "+(s.names.length+1));s.phones.push("");CM.push("");saveC();s.cats.push("m");s.cells.push(Array(nd.value).fill(""));tab.value=1;touch()};
-  const removeCourier=i=>{if(!confirm("Удалить курьера?"))return;const s=S.value;s.names.splice(i,1);s.phones.splice(i,1);CM.splice(i,1);saveC();s.cats.splice(i,1);s.cells.splice(i,1);sel.clear();touch()};
+  const removeCourier=i=>{if(!confirm("Удалить курьера?"))return;const s=S.value;s.names.splice(i,1);s.phones.splice(i,1);CM.splice(i,1);saveC();s.cats.splice(i,1);s.cells.splice(i,1);sel.clear();popup.value=null;touch()};
   async function putFile(path,text,message){
     const api="https://api.github.com/repos/"+G.repo+"/contents/"+path,hd={Authorization:"Bearer "+G.token,Accept:"application/vnd.github+json"};
     let sha;const g=await fetch(api+"?ref="+encodeURIComponent(G.branch),{headers:hd});
@@ -346,6 +359,7 @@ createApp({template:document.getElementById("tpl").textContent,setup(){
   onMounted(async()=>{
     checkAuth();
     setInterval(()=>{now.value=new Date()},60000);
+    window.addEventListener("keydown",e=>{if(e.key==="Escape")popup.value=null});
     window.addEventListener("mouseup",()=>{dragging=false});
     window.addEventListener("hashchange",()=>{admin.value=isAdm();tab.value=0;checkAuth()});
     let d=null;try{const r=await fetch("data/schedule.json?"+Date.now());if(r.ok)d=await r.json()}catch(e){}
@@ -356,6 +370,6 @@ createApp({template:document.getElementById("tpl").textContent,setup(){
     const n=d.cells.length?Math.max(1,...d.cells.map(x=>x.length)):DAYS;d.cells.forEach(x=>{while(x.length<n)x.push("")});nd.value=n;ensureDays(n);
     while(CM.length<d.names.length)CM.push("");
     S.value=d});
-  return{CM,saveC,vdays,ended,nd,applyDays,gr,saveGr,planTxt,pasteDay,pasteText,pasteColumn,onPaste,selMode,sel,clipN,isSel,cellDown,cellEnter,toggleCol,toggleRow,toggleSelMode,copyCells,pasteCells,clearCells,dcl,auth,pw,pw2,editor,login,setup,checkAuth,logout,isFile,CATS,groups,S,O,G,admin,tab,tabs,cur,me,dirty,busy,msg,isErr,days,myShifts,L,ratio,heat,chipClass,tel,parse,touch,saveO,saveG,addCourier,removeCourier,publish};
+  return{popup,CM,saveC,vdays,ended,nd,applyDays,gr,saveGr,planTxt,pasteDay,pasteText,pasteColumn,onPaste,selMode,sel,clipN,isSel,cellDown,cellEnter,toggleCol,toggleRow,toggleSelMode,copyCells,pasteCells,clearCells,dcl,auth,pw,pw2,editor,login,setup,checkAuth,logout,isFile,CATS,groups,S,O,G,admin,tab,tabs,cur,me,dirty,busy,msg,isErr,days,myShifts,L,ratio,heat,chipClass,tel,parse,touch,saveO,saveG,addCourier,removeCourier,publish};
 }}).mount("#app");
 </script></body></html>
