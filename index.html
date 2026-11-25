@@ -56,6 +56,8 @@ td.sel{background:rgba(91,108,255,.35)!important;box-shadow:inset 0 0 0 2px var(
 .heat{font-weight:600}.heat small{display:block;font-weight:400;color:var(--mut)}
 .two th:not(.sticky){position:static}.two th input{width:64px;border:1px solid var(--line);background:var(--bg);border-radius:6px;padding:3px 4px;text-align:center}
 .cnt{font-weight:600}
+tbody tr:hover td.sticky{background:linear-gradient(rgba(125,139,255,.08),rgba(125,139,255,.08)),var(--card)}
+tr.me td.sticky{background:linear-gradient(rgba(125,139,255,.2),rgba(125,139,255,.2)),var(--card)!important}
 .nm{width:140px;min-width:140px;max-width:140px}
 .nm.ed{width:280px;min-width:280px;max-width:280px}
 .fade-enter-active,.fade-leave-active{transition:opacity .2s,transform .2s}
@@ -129,7 +131,7 @@ td.sel{background:rgba(91,108,255,.35)!important;box-shadow:inset 0 0 0 2px var(
         <div class="tw"><table>
           <thead><tr><th class="sticky nm">Курьер</th><th>Телефон</th><th v-for="d in vdays" :key="d.k" :class="{we:d.we,fri:d.fri}">{{d.label}}<small>{{d.wd}}</small></th></tr></thead>
           <tbody v-for="g in groups" :key="g.id" v-show="g.rows.length"><tr class="grp"><th :colspan="vdays.length+2">{{g.icon}} {{g.name}} <span>{{g.rows.length}}</span></th></tr><tr v-for="i in g.rows" :key="i" :class="{me:i===me}">
-            <td class="sticky name nm">{{S.names[i]}}</td>
+            <td class="sticky name nm">{{S.names[i]}}<span v-if="editor&&CM[i]" :title="CM[i]"> 💬</span></td>
             <td><a v-if="tel(S.phones[i])" :href="'tel:'+tel(S.phones[i])">{{S.phones[i]}}</a></td>
             <td v-for="d in vdays" :key="d.k" :class="dcl(d.k)"><span v-if="!S.cells[i][d.k]" class="off">вых</span><span v-else-if="!ended(d.k,S.cells[i][d.k])" class="chip" :class="chipClass(S.cells[i][d.k])">{{S.cells[i][d.k]}}</span></td>
           </tr></tbody>
@@ -148,11 +150,12 @@ td.sel{background:rgba(91,108,255,.35)!important;box-shadow:inset 0 0 0 2px var(
           </template>
         </div>
         <div class="tw" :class="{selmode:selMode}"><table>
-          <thead><tr><th class="sticky nm ed">Курьер</th><th>Категория</th><th>Телефон</th><th v-for="d in vdays" :key="d.k" :class="{we:d.we,fri:d.fri,clk:selMode}" @click="selMode&&toggleCol(d.k)">{{d.label}}<small>{{d.wd}}</small></th><th></th></tr></thead>
-          <tbody v-for="g in groups" :key="g.id" v-show="g.rows.length"><tr class="grp"><th :colspan="vdays.length+4">{{g.icon}} {{g.name}} <span>{{g.rows.length}}</span></th></tr><tr v-for="i in g.rows" :key="i">
+          <thead><tr><th class="sticky nm ed">Курьер</th><th>Категория</th><th>Телефон</th><th>Комментарий</th><th v-for="d in vdays" :key="d.k" :class="{we:d.we,fri:d.fri,clk:selMode}" @click="selMode&&toggleCol(d.k)">{{d.label}}<small>{{d.wd}}</small></th><th></th></tr></thead>
+          <tbody v-for="g in groups" :key="g.id" v-show="g.rows.length"><tr class="grp"><th :colspan="vdays.length+5">{{g.icon}} {{g.name}} <span>{{g.rows.length}}</span></th></tr><tr v-for="i in g.rows" :key="i">
             <td class="sticky name nm ed" :class="{clk:selMode}" @click="selMode&&toggleRow(i)"><input v-if="!selMode" v-model="S.names[i]" @change="touch"><span v-else class="cv">{{S.names[i]}}</span></td>
             <td><select v-model="S.cats[i]" @change="touch"><option v-for="c in CATS" :key="c.id" :value="c.id">{{c.name}}</option></select></td>
             <td><input type="tel" v-model.trim="S.phones[i]" style="min-width:130px" @change="touch"></td>
+            <td><input v-model="CM[i]" placeholder="Комментарий" style="min-width:240px;text-align:left;padding-left:8px" @change="saveC"></td>
             <td v-for="d in vdays" :key="d.k" :class="[dcl(d.k),{bad:S.cells[i][d.k]&&!parse(S.cells[i][d.k]),sel:selMode&&isSel(i,d.k)}]" @mousedown="cellDown(i,d.k,$event)" @mouseenter="cellEnter(i,d.k)"><input v-if="!selMode" v-model.trim="S.cells[i][d.k]" @change="touch"><span v-else class="cv">{{S.cells[i][d.k]}}</span></td>
             <td><button class="x" @click="removeCourier(i)">✕</button></td>
           </tr></tbody>
@@ -216,7 +219,7 @@ const jset=(k,v)=>{try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}};
 function guess(row){const p=row.map(parse).filter(Boolean);if(!p.length)return"m";if(p.some(x=>x[0]>x[1]))return"n";return p[0][0]<14?"m":"e"}
 function parse(v){const m=/^\s*(\d{1,2})\s*[-–—]\s*(\d{1,2})\s*$/.exec(v||"");if(!m)return null;const a=+m[1],b=+m[2];return a>24||b>24||a===b?null:[a,b]}
 createApp({template:document.getElementById("tpl").textContent,setup(){
-  const nd=ref(DAYS),S=ref(null),O=reactive(jget(KO,blank())),G=reactive(Object.assign({repo:"",branch:"main",token:""},jget(KG,{})));
+  const KC="courier-comments-v1",CM=reactive(jget(KC,[])),nd=ref(DAYS),S=ref(null),O=reactive(jget(KO,blank())),G=reactive(Object.assign({repo:"",branch:"main",token:""},jget(KG,{})));
   const isFile=location.protocol==="file:",isAdm=()=>isFile||location.hash==="#/admin",admin=ref(isAdm()),tab=ref(0),me=ref(-1),dirty=ref(false),busy=ref(false),msg=ref(""),isErr=ref(false);
   let timer;
   const toast=(t,err=false,keep=false)=>{msg.value=t;isErr.value=err;clearTimeout(timer);if(!keep)timer=setTimeout(()=>msg.value="",6000)};
@@ -293,9 +296,10 @@ createApp({template:document.getElementById("tpl").textContent,setup(){
     e.preventDefault();toast("Вставлено значений: "+fillOrders(k,h,parseGrid(t)))}
   const tel=p=>(p||"").replace(/[^\d+]/g,"");
   const touch=()=>{dirty.value=true;jset(KD,S.value)};
+  const saveC=()=>jset(KC,CM);
   const saveO=()=>jset(KO,O),saveG=()=>jset(KG,G);
-  const addCourier=()=>{const s=S.value;s.names.push("Курьер "+(s.names.length+1));s.phones.push("");s.cats.push("m");s.cells.push(Array(nd.value).fill(""));tab.value=1;touch()};
-  const removeCourier=i=>{if(!confirm("Удалить курьера?"))return;const s=S.value;s.names.splice(i,1);s.phones.splice(i,1);s.cats.splice(i,1);s.cells.splice(i,1);sel.clear();touch()};
+  const addCourier=()=>{const s=S.value;s.names.push("Курьер "+(s.names.length+1));s.phones.push("");CM.push("");saveC();s.cats.push("m");s.cells.push(Array(nd.value).fill(""));tab.value=1;touch()};
+  const removeCourier=i=>{if(!confirm("Удалить курьера?"))return;const s=S.value;s.names.splice(i,1);s.phones.splice(i,1);CM.splice(i,1);saveC();s.cats.splice(i,1);s.cells.splice(i,1);sel.clear();touch()};
   async function putFile(path,text,message){
     const api="https://api.github.com/repos/"+G.repo+"/contents/"+path,hd={Authorization:"Bearer "+G.token,Accept:"application/vnd.github+json"};
     let sha;const g=await fetch(api+"?ref="+encodeURIComponent(G.branch),{headers:hd});
@@ -350,7 +354,8 @@ createApp({template:document.getElementById("tpl").textContent,setup(){
     d.phones=d.phones||[];while(d.phones.length<d.names.length)d.phones.push("");
     d.cats=d.cats||[];while(d.cats.length<d.names.length)d.cats.push(guess(d.cells[d.cats.length]));
     const n=d.cells.length?Math.max(1,...d.cells.map(x=>x.length)):DAYS;d.cells.forEach(x=>{while(x.length<n)x.push("")});nd.value=n;ensureDays(n);
+    while(CM.length<d.names.length)CM.push("");
     S.value=d});
-  return{vdays,ended,nd,applyDays,gr,saveGr,planTxt,pasteDay,pasteText,pasteColumn,onPaste,selMode,sel,clipN,isSel,cellDown,cellEnter,toggleCol,toggleRow,toggleSelMode,copyCells,pasteCells,clearCells,dcl,auth,pw,pw2,editor,login,setup,checkAuth,logout,isFile,CATS,groups,S,O,G,admin,tab,tabs,cur,me,dirty,busy,msg,isErr,days,myShifts,L,ratio,heat,chipClass,tel,parse,touch,saveO,saveG,addCourier,removeCourier,publish};
+  return{CM,saveC,vdays,ended,nd,applyDays,gr,saveGr,planTxt,pasteDay,pasteText,pasteColumn,onPaste,selMode,sel,clipN,isSel,cellDown,cellEnter,toggleCol,toggleRow,toggleSelMode,copyCells,pasteCells,clearCells,dcl,auth,pw,pw2,editor,login,setup,checkAuth,logout,isFile,CATS,groups,S,O,G,admin,tab,tabs,cur,me,dirty,busy,msg,isErr,days,myShifts,L,ratio,heat,chipClass,tel,parse,touch,saveO,saveG,addCourier,removeCourier,publish};
 }}).mount("#app");
 </script></body></html>
