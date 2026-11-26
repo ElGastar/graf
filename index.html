@@ -1,7 +1,7 @@
 <!DOCTYPE html><html lang="ru"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"><title>График курьеров</title><style>
-:root{--bg:#f4f5fb;--fg:#1b1d2a;--mut:#6c7090;--card:#fff;--line:#e4e6f2;--acc:#5b6cff;--acc2:#8b5bff;--day:#f1ecd9;--dayf:#6a5d36;--ngt:#e6e9f4;--ngf:#4f5b8a;--bad:239,68,68;
+:root{--bg:#f4f5fb;--fg:#1b1d2a;--mut:#6c7090;--card:#fff;--line:#e4e6f2;--acc:#5b6cff;--acc2:#8b5bff;--day:#fff3d6;--dayf:#8a5a00;--ngt:#e7e4ff;--ngf:#4a3bb5;--bad:239,68,68;
 box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
-@media(prefers-color-scheme:dark){:root{--bg:#10111a;--fg:#ececf5;--mut:#9a9cba;--card:#1a1c2a;--line:#2b2e44;--acc:#7d8bff;--acc2:#a07dff;--day:#3a3626;--dayf:#d9cfa6;--ngt:#2a2f45;--ngf:#aeb7e0}}
+@media(prefers-color-scheme:dark){:root{--bg:#10111a;--fg:#ececf5;--mut:#9a9cba;--card:#1a1c2a;--line:#2b2e44;--acc:#7d8bff;--acc2:#a07dff;--day:#4a3a12;--dayf:#ffd78a;--ngt:#2d2a5c;--ngf:#c9c2ff}}
 *{box-sizing:border-box}
 html{scroll-padding-top:env(safe-area-inset-top,0px)}
 body{margin:0;background:var(--bg);color:var(--fg);font:15px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
@@ -36,8 +36,8 @@ tr.me td{background:rgba(125,139,255,.2)!important}
 tr.grp th{position:static;text-align:left;padding:8px 12px;font-size:13px;background:linear-gradient(90deg,rgba(125,139,255,.2),transparent)}
 .gt{position:sticky;left:12px;display:inline-block}
 .grp .cn{background:var(--acc);color:#fff;border-radius:99px;padding:0 8px;font-size:11px;margin-left:6px}
-.chip{display:inline-block;min-width:50px;text-align:center;padding:2px 8px;border-radius:99px;font-size:12px;font-weight:500}
-.chip.d{background:var(--day);color:var(--dayf)}.chip.n{background:var(--ngt);color:var(--ngf)}.chip.o{background:rgba(var(--bad),.2)}
+.chip{display:inline-block;min-width:50px;text-align:center;padding:2px 8px;border-radius:99px;font-size:12px;font-weight:600}
+.chip.d{color:var(--dayf)}.chip.n{color:var(--ngf)}.chip.o{background:rgba(var(--bad),.2)}
 .off{color:var(--mut);font-size:12px}
 td input{width:100%;border:0;background:transparent;padding:8px 4px;text-align:center}
 td.name input{text-align:left;padding-left:8px}
@@ -57,12 +57,60 @@ td.sel{background:rgba(91,108,255,.35)!important;box-shadow:inset 0 0 0 2px var(
 .heat{font-weight:600}.heat small{display:block;font-weight:400;color:var(--mut)}
 .two th:not(.sticky){position:static}.two th input{width:64px;border:1px solid var(--line);background:var(--bg);border-radius:6px;padding:3px 4px;text-align:center}
 .cnt{font-weight:600}
+.cp{border:0;background:none;box-shadow:none;padding:0 3px;font-size:13px;color:var(--mut)}
+.cp:hover:not(:disabled){transform:none;box-shadow:none;color:var(--acc)}
 tbody tr:hover td.sticky{background:linear-gradient(rgba(125,139,255,.08),rgba(125,139,255,.08)),var(--card)}
 tr.me td.sticky{background:linear-gradient(rgba(125,139,255,.2),rgba(125,139,255,.2)),var(--card)!important}
 .modal{position:fixed;inset:0;background:rgba(0,0,0,.45);display:flex;align-items:center;justify-content:center;z-index:20;padding:16px}
 .mbox{background:var(--card);border-radius:16px;padding:18px;max-width:420px;width:100%;display:flex;flex-direction:column;gap:10px;box-shadow:0 20px 50px rgba(0,0,0,.35)}
 .mbox textarea{border:1px solid var(--line);background:var(--bg);color:var(--fg);border-radius:10px;padding:8px 10px;font:inherit;resize:vertical}
 .cmt{white-space:pre-wrap;line-height:1.5}
+.mbox{max-height:90vh;overflow:auto}
+.shell{position:relative}
+.bar{display:flex;align-items:center;flex-wrap:wrap;gap:12px 16px;min-height:64px;padding:10px 16px;background:var(--card);border:1px solid var(--line);border-radius:16px}
+.logo{display:flex;align-items:center;gap:10px;font-weight:600;font-size:16px;white-space:nowrap}
+.logo i{display:grid;place-items:center;width:36px;height:36px;border-radius:10px;background:linear-gradient(120deg,var(--acc),var(--acc2));color:#fff}
+.seg{display:flex;gap:4px;padding:4px;background:var(--bg);border-radius:12px;margin:0 auto;overflow-x:auto;max-width:100%}
+.tab{height:40px;padding:0 14px;border:0;border-radius:9px;background:none;font-weight:500;color:var(--mut);white-space:nowrap}
+.tab.on{background:var(--card);color:var(--acc);box-shadow:0 1px 4px rgba(30,40,100,.18)}
+.pill{display:flex;align-items:center;gap:8px;height:36px;padding:0 12px;border-radius:99px;background:rgba(245,158,11,.16);color:#b45309;font-weight:500;font-size:13px;white-space:nowrap}
+.pill:before{content:"";width:8px;height:8px;border-radius:50%;background:currentColor}
+.pill.ok{background:rgba(34,197,94,.16);color:#15803d}
+.bar .pub{height:44px;padding:0 20px;font-weight:600}
+.ib{display:grid;place-items:center;width:44px;height:44px;padding:0;border-radius:12px;color:var(--mut)}
+.ib.on{background:var(--bg);color:var(--acc);border-color:var(--acc)}.ib.sm{width:36px;height:36px;border:0}
+.pop-bg{position:fixed;inset:0;z-index:8}
+.pop{position:absolute;right:16px;top:78px;width:340px;max-width:calc(100% - 32px);padding:18px;background:var(--card);border:1px solid var(--line);border-radius:16px;box-shadow:0 18px 40px rgba(30,40,100,.22);z-index:9;display:flex;flex-direction:column;gap:12px}
+.pop h3{margin:0;font-size:15px}
+.f{display:flex;flex-direction:column;gap:6px;font-size:12px;font-weight:600;color:var(--mut)}
+.f input{height:44px;padding:0 12px;border:1px solid var(--line);border-radius:10px;background:var(--bg);color:var(--fg);font-size:14px;font-weight:400;width:100%}
+.tok{display:flex;align-items:center;gap:4px;border:1px solid var(--line);border-radius:10px;background:var(--bg);padding-right:4px}.tok input{border:0;flex:1;min-width:0}
+.sec{height:44px;border:1px solid var(--acc);color:var(--acc);font-weight:600}
+.outl{height:44px;display:grid;place-items:center;color:var(--mut);text-decoration:none}
+.params{display:flex;flex-wrap:wrap;align-items:flex-end;gap:16px 28px;margin:0 0 14px;padding:16px 20px;background:var(--card);border:1px solid var(--line);border-radius:16px}
+.grp{display:flex;flex-direction:column;gap:8px}
+.lab{font-size:12px;font-weight:600;letter-spacing:.05em;text-transform:uppercase;color:var(--mut)}
+.row{display:flex;align-items:center;gap:6px}
+.sq{display:grid;place-items:center;width:44px;height:44px;padding:0;border-radius:10px;color:var(--mut)}
+.val{display:flex;align-items:center;justify-content:center;gap:8px;min-width:130px;height:44px;padding:0 12px;border:1px solid var(--line);border-radius:10px;background:var(--card);font-weight:600;color:var(--fg)}
+.val input{border:0;background:transparent;font:inherit;color:inherit;width:120px}
+.val input.num{width:52px;text-align:center;-moz-appearance:textfield}
+.val input.num::-webkit-inner-spin-button,.val input.num::-webkit-outer-spin-button{-webkit-appearance:none;margin:0}
+.add{display:flex;align-items:center;gap:8px;height:44px;padding:0 16px;border:0;border-radius:10px;background:var(--bg);color:var(--acc);font-weight:600}
+.cnt{font-size:13px;color:var(--mut)}
+.sw{display:flex;align-items:center;gap:10px;margin-left:auto;height:44px;border:0;background:none;font-weight:500;color:var(--mut)}
+.sw i{position:relative;width:40px;height:22px;border-radius:99px;background:var(--line);transition:background .2s}
+.sw i:after{content:"";position:absolute;left:3px;top:3px;width:16px;height:16px;border-radius:50%;background:#fff;transition:transform .2s}
+.sw i.on{background:var(--acc)}.sw i.on:after{transform:translateX(18px)}
+.sticky.ph{left:140px;width:120px;min-width:120px;max-width:120px;box-shadow:inset -1px 0 0 var(--line)}
+.sticky.ph.ed{left:280px;width:150px;min-width:150px;max-width:150px}
+.nmw{display:flex;align-items:center;gap:4px}.nmw input{flex:1;min-width:0}
+.grab{cursor:grab;color:var(--mut);padding:0 8px;font-size:20px;line-height:1;user-select:none}.grab:active{cursor:grabbing}
+tr.dragging td{opacity:.4}
+tr.dt-up td{box-shadow:inset 0 3px 0 var(--acc)}tr.dt-down td{box-shadow:inset 0 -3px 0 var(--acc)}
+.hr{white-space:nowrap;min-width:108px}
+.chip.done{opacity:.45}th.past{opacity:.65}
+.today{height:40px;padding:0 14px;margin:0 0 12px 8px;font-weight:500;color:var(--acc)}
 .nm{width:140px;min-width:140px;max-width:140px}
 .nm.ed{width:280px;min-width:280px;max-width:280px}
 .fade-enter-active,.fade-leave-active{transition:opacity .2s,transform .2s}
@@ -80,10 +128,28 @@ tr.me td.sticky{background:linear-gradient(rgba(125,139,255,.2),rgba(125,139,255
 </style></head><body><div id="app"></div><script type="text/x-template" id="tpl">
 <div v-if="!S" class="loading">Загрузка…</div>
 <div v-else class="shell">
-  <header class="top">
-    <div><h1>График курьеров</h1><p>Смена «8-20» — с 8:00 до 20:00, «20-8» — ночная, с 20:00 до 8:00 следующего дня.</p></div>
-    <span v-if="editor" class="badge">Режим редактора</span>
+  <header class="bar">
+    <div class="logo"><i><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M19 8v6M22 11h-6"/></svg></i>График курьеров</div>
+    <template v-if="editor">
+      <nav class="seg"><button v-for="t in tabs" :key="t.id" class="tab" :class="{on:tab===t.id}" @click="tab=t.id">{{t.name}}</button></nav>
+      <span class="pill" :class="{ok:!dirty}">{{dirty?"Не опубликовано":"Опубликовано"}}</span>
+      <button class="pub" :disabled="busy" @click="publish">{{busy?"Публикую…":"Опубликовать"}}</button>
+      <button class="ib" :class="{on:gearOpen}" aria-label="Настройки GitHub" @click="gearOpen=!gearOpen"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg></button>
+    </template>
   </header>
+  <div class="hint" style="margin:10px 4px">Смена «8-20» — с 8:00 до 20:00, «20-8» — ночная, с 20:00 до 8:00 следующего дня.</div>
+  <template v-if="gearOpen&&editor">
+    <div class="pop-bg" @click="gearOpen=false"></div>
+    <div class="pop">
+      <h3>Подключение к GitHub</h3>
+      <label class="f">Репозиторий<input v-model.trim="G.repo" placeholder="логин/репозиторий" @change="saveG"></label>
+      <label class="f">Ветка<input v-model.trim="G.branch" @change="saveG"></label>
+      <label class="f">Токен<span class="tok"><input :type="showTok?'text':'password'" v-model.trim="G.token" @change="saveG"><button class="ib sm" type="button" aria-label="Показать токен" @click="showTok=!showTok"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg></button></span></label>
+      <div class="hint" style="margin:0">Токен хранится только в этом браузере.</div>
+      <button class="sec" @click="testGh">Проверить подключение</button>
+      <a v-if="!isFile" class="outl" href="#/" @click="logout">Выйти из редактора</a>
+    </div>
+  </template>
   <section v-if="admin&&!editor" class="card gate">
     <div v-if="auth==='checking'">Проверка…</div>
     <form v-else-if="auth==='login'" @submit.prevent="login">
@@ -103,23 +169,14 @@ tr.me td.sticky{background:linear-gradient(rgba(125,139,255,.2),rgba(125,139,255
     </form>
     <div v-else>Не удалось проверить пароль. <button @click="checkAuth">Повторить</button></div>
   </section>
-  <nav v-if="editor" class="tabs">
-    <button v-for="t in tabs" :key="t.id" :class="{on:tab===t.id}" @click="tab=t.id">{{t.name}}</button>
-  </nav>
-  <section v-if="editor" class="card tools">
-    <label>Начало: <input type="date" v-model="S.start" @change="touch"></label>
-    <label>Дней в графике: <input type="number" min="1" max="366" :value="nd" style="width:80px" @change="applyDays($event.target.value);$event.target.value=nd"></label>
-    <button @click="applyDays(nd+7)">+7 дней</button>
-    <button @click="addCourier">+ Курьер</button>
-    <button class="pub" :disabled="busy" @click="publish">{{busy?"Публикую…":"Опубликовать на GitHub"}}</button>
-    <span v-if="dirty" class="dirty">Есть неопубликованные изменения</span>
-    <details><summary>Настройки GitHub</summary>
-      <div class="gh">
-        <label>Репозиторий: <input v-model.trim="G.repo" placeholder="user/repo" @change="saveG"></label>
-        <label>Ветка: <input v-model.trim="G.branch" style="width:90px" @change="saveG"></label>
-        <label>Токен: <input type="password" v-model.trim="G.token" @change="saveG"></label>
-      </div>
-    </details>
+  <section v-if="editor&&cur!==2&&cur!==3" class="params">
+    <div class="grp"><div class="lab">Начало графика</div>
+      <div class="row"><button class="sq" aria-label="На день раньше" @click="shiftStart(-1)"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 18-6-6 6-6"/></svg></button><label class="val"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg><input type="date" v-model="S.start" @change="touch"></label><button class="sq" aria-label="На день позже" @click="shiftStart(1)"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg></button></div></div>
+    <div class="grp"><div class="lab">Длительность</div>
+      <div class="row"><button class="sq" aria-label="Меньше дней" @click="applyDays(nd-1)"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/></svg></button><label class="val"><input class="num" type="number" min="1" max="366" inputmode="numeric" aria-label="Количество дней" :value="nd" @change="applyDays($event.target.value);$event.target.value=nd"> дн.</label><button class="sq" aria-label="Больше дней" @click="applyDays(nd+1)"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></button></div></div>
+    <div v-if="cur===0||cur===1" class="grp"><div class="lab">Курьеры</div>
+      <div class="row"><button class="add" @click="addCourier"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>Добавить курьера</button><span class="cnt">{{info}}</span></div></div>
+    <button v-if="cur===1" class="sw" role="switch" :aria-checked="selMode" @click="toggleSelMode"><i :class="{on:selMode}"></i>Выделить ячейки</button>
   </section>
 
   <Transition name="fade" mode="out-in">
@@ -129,23 +186,23 @@ tr.me td.sticky{background:linear-gradient(rgba(125,139,255,.2),rgba(125,139,255
           <option :value="-1">Показать всех</option>
           <option v-for="(n,i) in S.names" :key="i" :value="i">Я — {{n}}</option>
         </select>
+        <button class="today" @click="scrollToday(true)">Сегодня</button>
         <TransitionGroup v-if="me>=0" name="card" tag="div" class="my">
           <div v-for="s in myShifts" :key="s.k">{{s.label}}, {{s.wd}}<b>{{s.v}}</b></div>
         </TransitionGroup>
         <div v-if="!vdays.length" class="hint">График закончился: все даты в прошлом. Добавьте дни или сдвиньте дату начала.</div>
         <div class="tw"><table>
-          <thead><tr><th class="sticky nm">Курьер</th><th>Телефон</th><th v-for="d in vdays" :key="d.k" :class="{we:d.we,fri:d.fri}">{{d.label}}<small>{{d.wd}}</small></th></tr></thead>
+          <thead><tr><th class="sticky nm">Курьер</th><th class="sticky ph">Телефон</th><th v-for="d in vdays" :key="d.k" :data-k="d.k" :class="{we:d.we,fri:d.fri,past:d.k<todayIdx}">{{d.label}}<small>{{d.wd}}</small></th></tr></thead>
           <tbody v-for="g in groups" :key="g.id" v-show="g.rows.length"><tr class="grp"><th :colspan="vdays.length+2"><span class="gt">{{g.icon}} {{g.name}} <span class="cn">{{g.rows.length}}</span></span></th></tr><tr v-for="i in g.rows" :key="i" :class="{me:i===me}">
             <td class="sticky name nm" :class="{clk:S.comments[i]}" @click="S.comments[i]&&(popup=i)">{{S.names[i]}}<span v-if="S.comments[i]"> 💬</span></td>
-            <td><a v-if="tel(S.phones[i])" :href="'tel:'+tel(S.phones[i])">{{S.phones[i]}}</a></td>
-            <td v-for="d in vdays" :key="d.k" :class="dcl(d.k)"><span v-if="!S.cells[i][d.k]" class="off">вых</span><span v-else-if="!ended(d.k,S.cells[i][d.k])" class="chip" :class="chipClass(S.cells[i][d.k])">{{S.cells[i][d.k]}}</span></td>
+            <td class="sticky ph"><a v-if="tel(S.phones[i])" :href="'tel:'+tel(S.phones[i])">{{S.phones[i]}}</a></td>
+            <td v-for="d in vdays" :key="d.k" :class="dcl(d.k)"><span v-if="!S.cells[i][d.k]" class="off">вых</span><span v-else class="chip" :class="[chipClass(S.cells[i][d.k]),{done:ended(d.k,S.cells[i][d.k])}]">{{S.cells[i][d.k]}}</span></td>
           </tr></tbody>
         </table></div>
       </template>
 
       <template v-else-if="cur===1">
-        <div class="card selbar">
-          <button :class="{on:selMode}" @click="toggleSelMode">{{selMode?"Выйти из режима выделения":"Выделить ячейки"}}</button>
+        <div v-if="selMode" class="card selbar">
           <template v-if="selMode">
             <span>Выбрано: <b>{{sel.size}}</b></span>
             <button :disabled="!sel.size" @click="copyCells">Копировать</button>
@@ -154,12 +211,13 @@ tr.me td.sticky{background:linear-gradient(rgba(125,139,255,.2),rgba(125,139,255
             <span class="hint" style="margin:0;width:100%">Выделяйте ячейки кликом или протяжкой мыши (Shift+клик — прямоугольник, клик по дате или имени — столбец или строка). Одну скопированную ячейку можно вставить сразу во все выделенные, а блок вставится от левой верхней выделенной ячейки.</span>
           </template>
         </div>
+        <div style="margin:0 0 10px"><button class="today" @click="scrollToday(true)">К сегодняшней дате</button></div>
         <div class="tw" :class="{selmode:selMode}"><table>
-          <thead><tr><th class="sticky nm ed">Курьер</th><th>Категория</th><th>Телефон</th><th>Комментарий</th><th v-for="d in vdays" :key="d.k" :class="{we:d.we,fri:d.fri,clk:selMode}" @click="selMode&&toggleCol(d.k)">{{d.label}}<small>{{d.wd}}</small></th><th></th></tr></thead>
-          <tbody v-for="g in groups" :key="g.id" v-show="g.rows.length"><tr class="grp"><th :colspan="vdays.length+5"><span class="gt">{{g.icon}} {{g.name}} <span class="cn">{{g.rows.length}}</span></span></th></tr><tr v-for="i in g.rows" :key="i">
-            <td class="sticky name nm ed" :class="{clk:selMode}" @click="selMode&&toggleRow(i)"><input v-if="!selMode" v-model="S.names[i]" @change="touch"><span v-else class="cv">{{S.names[i]}}</span></td>
+          <thead><tr><th class="sticky nm ed">Курьер</th><th class="sticky ph ed">Телефон</th><th>Категория</th><th>Комментарий</th><th v-for="d in vdays" :key="d.k" :data-k="d.k" :class="{we:d.we,fri:d.fri,clk:selMode,past:d.k<todayIdx}" @click="selMode&&toggleCol(d.k)">{{d.label}}<small>{{d.wd}}</small></th><th></th></tr></thead>
+          <tbody v-for="g in groups" :key="g.id" v-show="g.rows.length"><tr class="grp"><th :colspan="vdays.length+5"><span class="gt">{{g.icon}} {{g.name}} <span class="cn">{{g.rows.length}}</span></span></th></tr><tr v-for="i in g.rows" :key="i" :class="{dragging:drag.from===i,'dt-up':drag.over===i&&drag.from>i,'dt-down':drag.over===i&&drag.from<i}" @dragover="dragOver(i,$event)" @drop.prevent="dropRow(i)">
+            <td class="sticky name nm ed" :class="{clk:selMode}" @click="selMode&&toggleRow(i)"><div v-if="!selMode" class="nmw"><span class="grab" draggable="true" title="Перетащите, чтобы поменять порядок" aria-label="Перетащить курьера" @dragstart="dragStart(i,$event)" @dragend="dragEnd">⠿</span><input v-model="S.names[i]" @change="touch"></div><span v-else class="cv">{{S.names[i]}}</span></td>
+            <td class="sticky ph ed"><input type="tel" v-model.trim="S.phones[i]" style="width:100%;min-width:0" @change="touch"></td>
             <td><select v-model="S.cats[i]" @change="touch"><option v-for="c in CATS" :key="c.id" :value="c.id">{{c.name}}</option></select></td>
-            <td><input type="tel" v-model.trim="S.phones[i]" style="min-width:130px" @change="touch"></td>
             <td><input v-model="S.comments[i]" placeholder="Комментарий" style="min-width:240px;text-align:left;padding-left:8px" @change="touch"></td>
             <td v-for="d in vdays" :key="d.k" :class="[dcl(d.k),{bad:S.cells[i][d.k]&&!parse(S.cells[i][d.k]),sel:selMode&&isSel(i,d.k)}]" @mousedown="cellDown(i,d.k,$event)" @mouseenter="cellEnter(i,d.k)"><input v-if="!selMode" v-model.trim="S.cells[i][d.k]" @change="touch"><span v-else class="cv">{{S.cells[i][d.k]}}</span></td>
             <td><button class="x" @click="removeCourier(i)">✕</button></td>
@@ -194,22 +252,22 @@ tr.me td.sticky{background:linear-gradient(rgba(125,139,255,.2),rgba(125,139,255
         <div class="tw"><table class="two">
           <thead>
             <tr><th class="sticky" rowspan="2">Час</th><th v-for="d in days" :key="d.k" colspan="2" :class="{we:d.we,fri:d.fri}">{{d.label}}<small>{{d.wd}}</small></th></tr>
-            <tr><template v-for="d in days" :key="d.k"><th :class="{we:d.we,fri:d.fri}"><small>Курьеров</small></th><th :class="{we:d.we,fri:d.fri}"><small>Заказов на курьера</small></th></template></tr>
+            <tr><template v-for="d in days" :key="d.k"><th :class="{we:d.we,fri:d.fri}"><small>Курьеров <button class="cp" title="Копировать столбец «Курьеров»" @click="copyCol(d.k,'c')">⧉</button></small></th><th :class="{we:d.we,fri:d.fri}"><small>Заказов на курьера <button class="cp" title="Копировать столбец «Заказов на курьера»" @click="copyCol(d.k,'r')">⧉</button></small></th></template></tr>
             <tr><th class="sticky">Прирост, %</th><th v-for="d in days" :key="d.k" colspan="2" :class="{we:d.we,fri:d.fri}"><input type="number" step="1" v-model="gr.days[d.k]" :placeholder="gr.all||0" @change="saveGr"></th></tr>
           </thead>
           <tbody><tr v-for="h in 24" :key="h">
-            <th class="sticky">{{String(h-1).padStart(2,"0")}}:00</th>
+            <th class="sticky hr">{{String(h-1).padStart(2,"0")}}:00–{{String(h%24).padStart(2,"0")}}:00</th>
             <template v-for="k in nd" :key="k">
-              <td class="cnt" :class="dcl(k-1)">{{L[k-1][h-1]}}</td>
+              <td class="cnt" :class="dcl(k-1)">{{cnt(k-1,h-1)}}</td>
               <td class="heat" :class="dcl(k-1)" :style="heat(k-1,h-1)">{{ratio(k-1,h-1)}}<small>{{planTxt(k-1,h-1)}} зак.</small></td>
             </template>
           </tr></tbody>
         </table></div>
-        <div class="hint">В каждом дне два столбца: число курьеров на линии и заказов на одного курьера (с учётом прироста). Под числом — ожидаемое число заказов. Цвет ячейки: меньше 3 заказов на курьера — без цвета, от 3 — жёлтый, от 4 — оранжевый, от 5 — красный (∞ — заказы есть, курьеров нет).</div>
+        <div class="hint">В каждом дне два столбца: число курьеров на линии и заказов на одного курьера (с учётом прироста). Под числом — ожидаемое число заказов. Колонка — это смена: с {{cutH}}:00 этой даты до {{cutH}}:00 следующей. Строки выше {{cutH}}:00 (сверху, начиная с 00) — утро следующих суток, они показаны в колонке смены, которая их начала. Смена «20-8» в колонке даты идёт с 20:00 этой даты до 08:00 следующей, смена «01-08» — это утро следующих суток (с 01:00 до 08:00), она тоже стоит в колонке этой даты. Цвет ячейки: меньше 3 заказов на курьера — без цвета, от 3 — жёлтый, от 4 — оранжевый, от 5 — красный (∞ — заказы есть, курьеров нет).</div>
       </template>
     </div>
   </Transition>
-  <footer class="foot"><a v-if="!admin" href="#/admin">Редактор</a><a v-else-if="!isFile" href="#/" @click="logout">Выйти из редактора</a></footer>
+  <footer class="foot"><a v-if="!admin" href="#/admin">Редактор</a></footer>
   <Transition name="fade">
     <div v-if="popup!==null&&S.names[popup]!==undefined" class="modal" @click.self="popup=null">
       <div class="mbox">
@@ -248,19 +306,23 @@ createApp({template:document.getElementById("tpl").textContent,setup(){
   const now=ref(new Date());
   const todayIdx=computed(()=>{if(!S.value)return 0;const t=new Date(now.value);t.setHours(12,0,0,0);return Math.round((t-new Date(S.value.start+"T12:00:00"))/864e5)});
   const ended=(k,v)=>{const p=parse(v);if(!p)return false;const d=new Date(S.value.start+"T00:00:00");d.setDate(d.getDate()+k+(p[0]<p[1]?0:1));d.setHours(p[1],0,0,0);return now.value>=d};
-  const vdays=computed(()=>days.value.filter(d=>d.k>=todayIdx.value||S.value.cells.some(r=>r[d.k]&&!ended(d.k,r[d.k]))));
+  const vdays=computed(()=>days.value);
   const myShifts=computed(()=>me.value<0?[]:S.value.cells[me.value].map((v,k)=>v&&!ended(k,v)?{k,v,label:days.value[k].label,wd:days.value[k].wd}:null).filter(Boolean));
-  const L=computed(()=>{const a=Array.from({length:nd.value+1},()=>Array(24).fill(0));
-    S.value.cells.forEach(r=>r.forEach((v,k)=>{const p=parse(v);if(!p)return;const[x,y]=p;
-      if(x<y){for(let h=x;h<y;h++)a[k][h%24]++}else{for(let h=x;h<24;h++)a[k][h]++;for(let h=0;h<y;h++)a[k+1][h]++}}));
-    return a.slice(0,nd.value)});
+  const L=computed(()=>{const c=cut(),a=Array.from({length:nd.value+2},()=>Array(24).fill(0));
+    S.value.cells.forEach(r=>r.forEach((v,k)=>{const p=parse(v);if(!p)return;const[x,y]=p,len=(((y-x)%24)+24)%24||24,t0=x>=c?x:x+24;
+      for(let t=t0;t<t0+len;t++){const col=k+Math.floor((t-c)/24);if(a[col])a[col][t%24]++}}));
+    return a});
   const KGR="courier-growth-v1",gr=reactive(Object.assign({all:0,days:[]},jget(KGR,{})));
   while(gr.days.length<DAYS)gr.days.push("");
   const saveGr=()=>jset(KGR,gr);
   const gOf=k=>{const v=gr.days[k];return(v===""||v==null||isNaN(+v))?(+gr.all||0):+v};
-  const plan=(k,h)=>(+O[k][h]||0)*(1+gOf(k)/100);
+  const cut=()=>8;
+  const cutH=computed(()=>cut());
+  const planBase=(k,h)=>{const kk=h>=cut()?k:k+1;return(O[kk]?+O[kk][h]||0:0)*(1+gOf(k)/100)};
+  const plan=(k,h)=>planBase(k,h);
+  const cnt=(k,h)=>L.value[k]?L.value[k][h]:0;
   const planTxt=(k,h)=>+plan(k,h).toFixed(1);
-  const q=(k,h)=>{const c=L.value[k][h],o=plan(k,h);return c?o/c:(o?Infinity:0)};
+  const q=(k,h)=>{const c=cnt(k,h),o=plan(k,h);return c?o/c:(o?Infinity:0)};
   const ratio=(k,h)=>{const v=q(k,h);return v===Infinity?"∞":(v?+v.toFixed(1):"–")};
   const heat=(k,h)=>{const v=q(k,h);
     if(v>=5)return{background:"rgba(239,68,68,.5)"};
@@ -310,6 +372,35 @@ createApp({template:document.getElementById("tpl").textContent,setup(){
   function onPaste(k,h,e){const t=(e.clipboardData||window.clipboardData).getData("text");
     if(!/[\n\t]/.test(t.trim()))return;
     e.preventDefault();toast("Вставлено значений: "+fillOrders(k,h,parseGrid(t)))}
+  async function copyText(t,msg){
+    try{await navigator.clipboard.writeText(t);toast(msg)}
+    catch(e){const ta=document.createElement("textarea");ta.value=t;ta.style.cssText="position:fixed;opacity:0";document.body.appendChild(ta);ta.select();
+      try{document.execCommand("copy");toast(msg)}catch(_){toast("Не удалось скопировать.",true)}ta.remove()}}
+  function copyCol(k,kind){
+    const n=24,v=Array.from({length:n},(_,h)=>{if(kind==="c")return String(cnt(k,h));const x=q(k,h);return x===Infinity?"":String(+x.toFixed(1)).replace(".",",")});
+    copyText(v.join("\n"),"Скопирован столбец «"+(kind==="c"?"Курьеров":"Заказов на курьера")+"» за "+days.value[k].label+" ("+n+" знач.)")}
+  const gearOpen=ref(false),showTok=ref(false);
+  const dayOpts=computed(()=>[7,14,21,30].includes(nd.value)?[7,14,21,30]:[7,14,21,30,nd.value].sort((a,b)=>a-b));
+  const plur=(n,a,b,c)=>n%10===1&&n%100!==11?a:(n%10>=2&&n%10<=4&&(n%100<10||n%100>=20)?b:c);
+  const info=computed(()=>{if(!S.value)return"";const n=S.value.names.length,c=groups.value.filter(g=>g.rows.length).length;return n+" "+plur(n,"курьер","курьера","курьеров")+" · "+c+" "+plur(c,"категория","категории","категорий")});
+  function shiftStart(d){const dt=new Date(S.value.start+"T12:00:00");dt.setDate(dt.getDate()+d);
+    S.value.start=dt.getFullYear()+"-"+String(dt.getMonth()+1).padStart(2,"0")+"-"+String(dt.getDate()).padStart(2,"0");touch()}
+  async function testGh(){
+    if(!G.repo||!G.token)return toast("Укажите репозиторий и токен.",true);
+    try{const r=await fetch("https://api.github.com/repos/"+G.repo,{headers:{Authorization:"Bearer "+G.token,Accept:"application/vnd.github+json"}});
+      if(!r.ok)throw new Error(r.status);toast("Подключение работает: "+(await r.json()).full_name)}
+    catch(e){toast("Не удалось подключиться (код "+e.message+"). Проверьте репозиторий и токен.",true)}}
+  function scrollToday(smooth){
+    const wrap=document.querySelector(".tw");if(!wrap||!S.value)return;
+    const k=Math.min(Math.max(todayIdx.value,0),nd.value-1),th=wrap.querySelector('th[data-k="'+k+'"]'),nm=wrap.querySelector("th.nm"),ph=wrap.querySelector("th.ph");
+    if(th&&nm)wrap.scrollTo({left:Math.max(0,th.offsetLeft-nm.offsetWidth-(ph?ph.offsetWidth:0)),behavior:smooth?"smooth":"auto"})}
+  Vue.watch(cur,()=>setTimeout(()=>{if(cur.value===0||cur.value===1)scrollToday(false)},300));
+  const drag=reactive({from:null,over:null});
+  function dragStart(i,e){drag.from=i;e.dataTransfer.effectAllowed="move";e.dataTransfer.setData("text/plain",String(i));const tr=e.target.closest("tr");if(tr)e.dataTransfer.setDragImage(tr,20,20)}
+  function dragOver(i,e){if(drag.from===null||S.value.cats[i]!==S.value.cats[drag.from])return;e.preventDefault();e.dataTransfer.dropEffect="move";drag.over=i}
+  const dragEnd=()=>{drag.from=null;drag.over=null};
+  function moveCourier(a,b){["names","phones","cats","cells","comments"].forEach(k=>{const arr=S.value[k];if(!arr)return;const[x]=arr.splice(a,1);arr.splice(b,0,x)});sel.clear();touch()}
+  function dropRow(i){const a=drag.from;dragEnd();if(a===null||a===i||S.value.cats[a]!==S.value.cats[i])return;moveCourier(a,i)}
   const tel=p=>(p||"").replace(/[^\d+]/g,"");
   const touch=()=>{dirty.value=true;jset(KD,S.value)};
   const saveO=()=>jset(KO,O),saveG=()=>jset(KG,G);
@@ -361,7 +452,7 @@ createApp({template:document.getElementById("tpl").textContent,setup(){
   onMounted(async()=>{
     checkAuth();
     setInterval(()=>{now.value=new Date()},60000);
-    window.addEventListener("keydown",e=>{if(e.key==="Escape")popup.value=null});
+    window.addEventListener("keydown",e=>{if(e.key==="Escape"){popup.value=null;gearOpen.value=false}});
     window.addEventListener("mouseup",()=>{dragging=false});
     window.addEventListener("hashchange",()=>{admin.value=isAdm();tab.value=0;checkAuth()});
     let d=null;try{const r=await fetch("data/schedule.json?"+Date.now());if(r.ok)d=await r.json()}catch(e){}
@@ -370,9 +461,9 @@ createApp({template:document.getElementById("tpl").textContent,setup(){
     d.phones=d.phones||[];while(d.phones.length<d.names.length)d.phones.push("");
     d.cats=d.cats||[];while(d.cats.length<d.names.length)d.cats.push(guess(d.cells[d.cats.length]));
     const n=d.cells.length?Math.max(1,...d.cells.map(x=>x.length)):DAYS;d.cells.forEach(x=>{while(x.length<n)x.push("")});nd.value=n;ensureDays(n);
-    d.comments=d.comments||[];while(d.comments.length<d.names.length)d.comments.push("");
+    delete d.requests;delete d.reqUrl;delete d.contact;d.comments=d.comments||[];while(d.comments.length<d.names.length)d.comments.push("");
     if(admin.value&&!d.comments.some(Boolean)&&CM.some(Boolean)){CM.forEach((v,i)=>{if(i<d.comments.length)d.comments[i]=v||""});dirty.value=true;toast("Комментарии перенесены в публичные данные. Нажмите «Опубликовать на GitHub».")}
-    S.value=d});
-  return{popup,vdays,ended,nd,applyDays,gr,saveGr,planTxt,pasteDay,pasteText,pasteColumn,onPaste,selMode,sel,clipN,isSel,cellDown,cellEnter,toggleCol,toggleRow,toggleSelMode,copyCells,pasteCells,clearCells,dcl,auth,pw,pw2,editor,login,setup,checkAuth,logout,isFile,CATS,groups,S,O,G,admin,tab,tabs,cur,me,dirty,busy,msg,isErr,days,myShifts,L,ratio,heat,chipClass,tel,parse,touch,saveO,saveG,addCourier,removeCourier,publish};
+    S.value=d;setTimeout(()=>scrollToday(false),400)});
+  return{cnt,cutH,drag,dragStart,dragOver,dragEnd,dropRow,scrollToday,gearOpen,showTok,dayOpts,info,shiftStart,testGh,copyCol,popup,vdays,ended,nd,applyDays,gr,saveGr,planTxt,pasteDay,pasteText,pasteColumn,onPaste,selMode,sel,clipN,isSel,cellDown,cellEnter,toggleCol,toggleRow,toggleSelMode,copyCells,pasteCells,clearCells,dcl,auth,pw,pw2,editor,login,setup,checkAuth,logout,isFile,CATS,groups,S,O,G,admin,tab,tabs,cur,me,dirty,busy,msg,isErr,days,myShifts,L,ratio,heat,chipClass,tel,parse,touch,saveO,saveG,addCourier,removeCourier,publish};
 }}).mount("#app");
 </script></body></html>
